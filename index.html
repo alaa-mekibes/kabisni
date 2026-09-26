@@ -128,9 +128,9 @@
             <div id="timer" style="font-weight: 500; display: none;">0.0</div>
       <button id="save" title="انتظر 10 ثواني">حفظ التقدم</button>
     </footer>
-    <!-- Classic script, not type="module": modules are CORS-blocked on file://, which
-         left the game dead when index.html was opened directly. ?v=2 busts the JS cache
-         after a deploy so a stale main.js never meets a fresh index.html. -->
-    <script src="assets/js/main.js?v=4"></script>
+    <!-- Classic scripts only (modules are CORS-blocked on file://).
+         Three.js loads lazily from main.js only when the boss comes, so the
+         2D game stays light. ?v= busts the JS cache. -->
+    <script src="assets/js/main.js?v=6"></script>
   </body>
 </html>

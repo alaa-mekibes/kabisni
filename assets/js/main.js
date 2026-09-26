@@ -609,6 +609,22 @@ function randomPosition() {
 }
 
 // ---- 6. Start The Game ==============================================================
+// Boss-arena state lives here (not inside startGame): the ?boss=1 test jump can
+// run before startGame's body finishes, and anything it touches must already
+// be initialized or it dies in the temporal dead zone.
+let bossArena = null;
+
+// Classic 11x8 invader — the same sprite as assets/img/space-invader.png.
+const INVADER_SPRITE = [
+  "..X.....X..",
+  "...X...X...",
+  "..XXXXXXX..",
+  ".XX.XXX.XX.",
+  "XXXXXXXXXXX",
+  "X.XXXXXXX.X",
+  "X.X.....X.X",
+  "...XX.XX..."
+];
 // Burst ceiling only: a masher can spike past 10/s briefly, so keep headroom here.
 // The sustained limit is the duration * 10 rule inside isScoreValid().
 const MAX_CLICKS_PER_SECOND = 20;
@@ -622,8 +638,7 @@ function startGame() {
   gameStartTime = new Date();
   const startTimestamp = performance.now();
   gameTimer = setInterval(updateGameTimer, 1000);
-  enemyShowBeforeSatart(false);
-  startLv3();
+  enemyShowBeforeSatart();
   // UI display : Block | none
   document.querySelector("#save").style.display = "block";
   document.querySelector("#save").style.cursor = "no-drop";
@@ -635,21 +650,23 @@ function startGame() {
     document.querySelector("#start_menu").style.display = "none";
   }, 999);
 
+  // Space-invader flyby: in at 2s with its pew sound, out at 18s —
+  // 2s before Lahnt's 20s entrance. One 16s pass that fades itself out.
   function enemyShowBeforeSatart() {
-    // setTimeout(() => {
-    //   const spaceVoice = document.createElement("audio");
-    //   spaceVoice.src = "assets/sound/space-sound.mp3"
-    //   document.querySelector(".enemy").style.display = "block";
-    //   document.querySelector(".enemy").style.right = "-100%";
-    //   document.querySelector(".enemy").style.animation = "rtl 4s ease-out infinite";
-    //   spaceVoice.play();
-    //   setTimeout(() => {
-    //     document.querySelector(".enemy").style.display = "none";
-    //   }, 4000);
-    // }, 5000);
+    setTimeout(() => {
+      if (!isGameRunning) return;
+      const spaceVoice = document.createElement("audio");
+      spaceVoice.src = "assets/sound/space-sound.mp3";
+      const enemy = document.querySelector(".enemy");
+      enemy.style.display = "block";
+      enemy.style.animation = "invader-flyby 16s linear forwards";
+      spaceVoice.play();
+    }, 2000);
+    setTimeout(() => {
+      if (!isGameRunning) return;
+      document.querySelector(".enemy").style.display = "none";
+    }, 18000);
   }
-
-  enemyShowBeforeSatart();
 
   setTimeout(() => {
     alertUser("لا تنسى حفظ تقدمك بعد الانتهاء");
@@ -775,7 +792,8 @@ function startGame() {
     function thereAreAnyBugs() {
       if (document.getElementsByClassName("bug").length > 0) {
         looser(" لقد فشلت في التكبيس !", "🪳", "الهورينغ استغل الفوضى، وطار بالانتصار 🪰💥");
-      } else startLv3();
+      }
+      // else: 2D boss retired — invader only flies by at 2s, real boss is 3D.
     }
   }
   // Press This Level 3
@@ -817,14 +835,24 @@ function startGame() {
   // -1 pinned to the bug's real on-screen rect: the bug lives inside
   // .main_container while body-level % coordinates resolve against the whole
   // page, so sharing the bug's percentages could never line up.
-  function pointMinus(p, bugEl) {
-    const r = bugEl.getBoundingClientRect();
+  // target is a DOM element (2D bugs) or a precomputed {x, y} viewport point
+  // (3D arena, where there is no DOM box to measure).
+  function pointMinus(p, target) {
+    let x, y;
+    if (target && typeof target.x === "number" && typeof target.y === "number") {
+      x = target.x;
+      y = target.y;
+    } else {
+      const r = target.getBoundingClientRect();
+      x = r.left + r.width / 2;
+      y = r.top - 6;
+    }
     let point = document.createElement("span");
     point.textContent = p;
     point.style.cssText = `
       position: fixed;
-      left: ${r.left + r.width / 2}px;
-      top: ${r.top - 6}px;
+      left: ${x}px;
+      top: ${y}px;
       transform: translate(-50%, -100%);
       color: #ff2d2d;
       font-size: 1.5rem;
@@ -863,6 +891,13 @@ function startGame() {
     document.querySelector("#save").removeAttribute("title");
     document.getElementById("save").addEventListener("click", endGame, { once: true });
   }, 10000);
+
+  // TEST ONLY: ?boss=1 skips the whole run and opens the boss arena at once.
+  // Lahnt/bug timers below never get scheduled; scoring and save stay live.
+  if (new URLSearchParams(location.search).has("boss")) {
+    startBossPhase();
+    return;
+  }
 
   // Lahnt's honeypot: 20s in he slides up bottom-right offering +9999 points.
   // Taking the deal is cheating, so "yes" ends on the cheater page.
@@ -905,7 +940,7 @@ function startGame() {
       clearInterval(loop);
       clearInterval(gameLoop);
       gameEndTime = new Date();
-      caughtCheating((gameEndTime - gameStartTime) / 1000);
+      caughtCheating((gameEndTime - gameStartTime) / 1000, true);
     });
 
     trap.querySelector(".lahnt-no").addEventListener("click", () => {
@@ -936,7 +971,7 @@ function startGame() {
     setTimeout(spawnBugLoop, 2000);
   }
 
-  function spawnBug() {
+  function spawnBug(quiet = false) {
     if (!isGameRunning) return;
     const post = randomPosition();
     const bug = document.createElement("img");
@@ -945,9 +980,11 @@ function startGame() {
     bug.classList.add("bug");
     document.querySelector(".main_container").appendChild(bug);
     bug.style.cssText = `position: absolute; width: 60px; z-index: 8; left: calc(${Math.abs(post.randX)}% - 50px); top: calc(${Math.abs(post.randY)}% - 50px); cursor: pointer; animation: bug linear 2s infinite, bug-drain-pulse 1s ease-in-out infinite;`;
-    yippyAudio.play();
     // Warn once, and spell out the double-click so nobody misses it.
-    if (bugSpawns === 0) {
+    if (!quiet) {
+      yippyAudio.play();
+    }
+    if (bugSpawns === 0 && !quiet) {
       alertUser("إنتبه من الهورينغ... اضغط عليه مرتين للتخلص منه !!");
     }
 
@@ -975,12 +1012,358 @@ function startGame() {
       bugsKilled++;
       // No toast per kill — only when the whole wave is wiped out.
       if (bugsKilled >= maxBugSpawns && isGameRunning) {
-        alertUser("انتهت غارة الهورينغ، أحسنت أيها المكبس!");
+        onWaveCleared();
       }
     });
   }
 
+  // ---- 7. Final boss: voxel invader arena (Three.js r147, vendored UMD) ----
+  // Fires 5s after the bug wave is wiped. The 2D field hides, a full-stage 3D
+  // arena takes over, HUD stays HTML. Boss dies after 20 trusted clicks, then
+  // the normal endGame() scoring runs, so all anti-cheat invariants hold.
+  // (bossArena + INVADER_SPRITE live at top level — see section 6 header.)
+
+  function onWaveCleared() {
+    alertUser("انتهت غارة الهورينغ، أحسنت أيها المكبس!");
+    setTimeout(() => {
+      if (!isGameRunning) return;
+      startBossPhase();
+    }, 5000);
+  }
+
+  function disposeArena() {
+    if (!bossArena) return;
+    try {
+      cancelAnimationFrame(bossArena.raf);
+      clearTimeout(bossArena.timer);
+      window.removeEventListener("resize", bossArena.onResize);
+      bossArena.renderer.dispose();
+      bossArena.wrap.remove();
+    } catch (error) {
+      console.warn("arena dispose failed", error);
+    }
+    bossArena = null;
+  }
+
+  // Three.js loads lazily (classic scripts, file://-safe) only when the boss
+  // actually comes, so the 2D game never pays the ~700KB parse cost.
+  function ensureThree() {
+    return new Promise(resolve => {
+      // Bugs are PNG sprites (core TextureLoader) — no GLTFLoader needed.
+      const need = [];
+      if (typeof THREE === "undefined") need.push("assets/js/three.min.js");
+      if (!need.length) {
+        resolve(true);
+        return;
+      }
+      let pending = need.length;
+      let failed = false;
+      need.forEach(src => {
+        const s = document.createElement("script");
+        s.src = src;
+        s.onload = () => {
+          if (!failed && --pending === 0) resolve(true);
+        };
+        s.onerror = () => {
+          if (!failed) {
+            failed = true;
+            resolve(false);
+          }
+        };
+        document.head.appendChild(s);
+      });
+    });
+  }
+
+  async function startBossPhase() {
+    const threeReady = await ensureThree().catch(() => false);
+    if (!threeReady || typeof THREE === "undefined") {
+      alertUser("تعذر تحميل قتال الزعيم، احفظ تقدمك");
+      return;
+    }
+    let renderer;
+    const lowEnd = (navigator.hardwareConcurrency || 8) <= 4;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: !lowEnd });
+    } catch (error) {
+      console.warn("WebGL unavailable", error);
+      alertUser("جهازك لا يدعم قتال الزعيم، احفظ تقدمك");
+      return;
+    }
+
+    document.querySelector(".player").style.display = "none";
+    document.querySelector(".enemy").style.display = "none";
+    document.querySelectorAll(".bug").forEach(b => b.remove());
+
+    const host = document.querySelector(".main_container");
+    const wrap = document.createElement("div");
+    wrap.id = "bossArena";
+    wrap.dir = "rtl";
+    wrap.innerHTML = `<div class="boss-hp"><span></span></div><div class="boss-title">الزعيم: 20 ضربة</div>`;
+    host.appendChild(wrap);
+    const hpFill = wrap.querySelector(".boss-hp span");
+
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+    renderer.setSize(host.clientWidth, Math.max(1, host.clientHeight));
+    wrap.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x050008);
+    scene.fog = new THREE.FogExp2(0x050008, 0.045);
+
+    const camera = new THREE.PerspectiveCamera(55, host.clientWidth / Math.max(1, host.clientHeight), 0.1, 100);
+    camera.position.set(0, 3.4, 14);
+    camera.lookAt(0, 2.2, 0);
+
+    scene.add(new THREE.HemisphereLight(0x8a9bb5, 0x0a0505, 0.55));
+    const key = new THREE.DirectionalLight(0xffffff, 0.9);
+    key.position.set(4, 8, 10);
+    scene.add(key);
+    const rim = new THREE.PointLight(0xff2222, 1.6, 40);
+    rim.position.set(0, 4, -6);
+    scene.add(rim);
+
+    const ground = new THREE.Mesh(
+      new THREE.CircleGeometry(16, 40),
+      new THREE.MeshStandardMaterial({ color: 0x0b0d14, roughness: 0.95, metalness: 0 })
+    );
+    ground.rotation.x = -Math.PI / 2;
+    scene.add(ground);
+
+    // Voxel invader in one draw call; red eyes slightly forward.
+    // (Sprite grid is top-level INVADER_SPRITE — see section 6 header.)
+    const bossGroup = new THREE.Group();
+    const cells = [];
+    INVADER_SPRITE.forEach((row, y) => {
+      [...row].forEach((c, x) => {
+        if (c === "X") cells.push([x, y]);
+      });
+    });
+    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x16161f, roughness: 0.5, metalness: 0.4, emissive: 0x660000, emissiveIntensity: 0.35 });
+    const body = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1), bodyMat, cells.length);
+    const cellMatrix = new THREE.Matrix4();
+    cells.forEach(([x, y], i) => {
+      cellMatrix.makeTranslation(x - 5, 3.5 - y, 0);
+      body.setMatrixAt(i, cellMatrix);
+    });
+    body.instanceMatrix.needsUpdate = true;
+    bossGroup.add(body);
+    const eyeMat = new THREE.MeshBasicMaterial({ color: 0xff2222 });
+    const eyeGeo = new THREE.BoxGeometry(0.9, 0.9, 0.2);
+    [-2, 2].forEach(ex => {
+      const eye = new THREE.Mesh(eyeGeo, eyeMat);
+      eye.position.set(ex, 0.5, 0.55);
+      bossGroup.add(eye);
+    });
+    bossGroup.scale.setScalar(0.5);
+    bossGroup.position.set(0, 2.6, 0);
+    scene.add(bossGroup);
+
+    const BOSS_HP_MAX = 20;
+    let bossHP = BOSS_HP_MAX;
+    let bossActive = true;
+    let dying = 0;
+    let flash = 0;
+    let enraged = false;
+    let lastFrame = 0;
+    let hotStreak = 0;
+
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    function pick(clientX, clientY, targets) {
+      const r = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((clientX - r.left) / r.width) * 2 - 1;
+      pointer.y = -((clientY - r.top) / r.height) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      const hits = raycaster.intersectObjects(targets, true);
+      return hits.length ? hits[0] : null;
+    }
+
+    renderer.domElement.addEventListener("click", e => {
+      if (!e.isTrusted || !isGameRunning || !bossActive || dying > 0) return;
+      if (!pick(e.clientX, e.clientY, [bossGroup])) return;
+      registerClick();
+      if (updateScore) {
+        updateScore();
+        pointPlus("+1", e);
+      }
+      bossHP--;
+      hpFill.style.width = Math.max(0, (bossHP / BOSS_HP_MAX) * 100) + "%";
+      flash = 1;
+      wrap.classList.remove("shake");
+      void wrap.offsetWidth;
+      wrap.classList.add("shake");
+      if (!enraged && bossHP <= BOSS_HP_MAX / 2) {
+        enraged = true;
+        alertUser("الزعيم غاضب!");
+      }
+      bossGroup.position.x += (Math.random() - 0.5) * 0.3;
+      if (bossHP <= 0) winBossPhase();
+    });
+
+    // 3D bugs are sprites cut from the transparent PNG — trivial GPU cost,
+    // <img>-based loading so file:// works too.
+    const bugGroups = [];
+    let bugSpriteMap = null;
+    new THREE.TextureLoader().load(
+      "assets/img/Hoarding_Bug_Lethal_Company.png",
+      tex => {
+        bugSpriteMap = tex;
+      },
+      undefined,
+      () => console.warn("bug sprite failed to load")
+    );
+
+    function worldToScreen(v3) {
+      const v = v3.clone().project(camera);
+      const r = renderer.domElement.getBoundingClientRect();
+      return { x: r.left + ((v.x + 1) / 2) * r.width, y: r.top + ((1 - v.y) / 2) * r.height };
+    }
+
+    function spawnBossBug() {
+      if (!bossActive || !isGameRunning || !bossArena || bugGroups.length >= 4) return;
+      if (!bugSpriteMap) return; // texture still flying in; next tick retries
+      const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: bugSpriteMap, transparent: true }));
+      sprite.scale.set(1.7, 1.7, 1);
+      sprite.position.set((Math.random() - 0.5) * 10, 0.9, -2 + Math.random() * 4);
+      sprite.userData.dir = Math.random() * Math.PI * 2;
+      sprite.userData.speed = 1 + Math.random() * 1.5;
+      scene.add(sprite);
+      const rec = { obj: sprite, drain: 0 };
+      bugGroups.push(rec);
+      rec.drain = setInterval(() => {
+        if (!isGameRunning || !bossActive || !bossArena) {
+          clearInterval(rec.drain);
+          return;
+        }
+        if (score > 0) {
+          score--;
+          if (updateScore) {
+            updateScore();
+            const anchor = new THREE.Vector3();
+            rec.obj.getWorldPosition(anchor);
+            anchor.y += 1;
+            pointMinus("-1", worldToScreen(anchor));
+          }
+        }
+      }, 1000);
+    }
+
+    renderer.domElement.addEventListener("dblclick", e => {
+      if (!isGameRunning || !bossActive) return;
+      const hit = pick(e.clientX, e.clientY, bugGroups.map(b => b.obj));
+      if (!hit) return;
+      const idx = bugGroups.findIndex(b => b.obj === hit.object);
+      if (idx === -1) return;
+      const [dead] = bugGroups.splice(idx, 1);
+      clearInterval(dead.drain);
+      scene.remove(dead.obj);
+    });
+
+    function scheduleBossBugs() {
+      if (!bossActive || !isGameRunning || !bossArena) return;
+      spawnBossBug();
+      bossArena.timer = setTimeout(scheduleBossBugs, 4000);
+    }
+
+    function winBossPhase() {
+      if (!bossActive) return;
+      bossActive = false;
+      if (bossArena) clearTimeout(bossArena.timer);
+      bugGroups.forEach(b => {
+        clearInterval(b.drain);
+        scene.remove(b.obj);
+      });
+      bugGroups.length = 0;
+      dying = 0.0001;
+      flash = 3;
+      rim.intensity = 3;
+      alertUser("سقط الزعيم! أحسنت أيها المكبس");
+    }
+
+    // Boss down — the run goes on. Arena out, player back, victory banner.
+    function finishBossWin() {
+      if (!bossArena) return;
+      disposeArena();
+      if (!isGameRunning) return;
+      document.querySelector(".player").style.display = "";
+      const banner = document.createElement("div");
+      banner.className = "boss-victory";
+      banner.dir = "rtl";
+      banner.textContent = "سقط الزعيم! التكبيس مستمر 🏆";
+      document.querySelector(".main_container").appendChild(banner);
+      setTimeout(() => {
+        banner.style.animation = "fade-out 1s";
+        setTimeout(() => banner.remove(), 1000);
+      }, 4000);
+    }
+
+    function onResize() {
+      if (!bossArena) return;
+      const w = host.clientWidth;
+      const h = Math.max(1, host.clientHeight);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    }
+    window.addEventListener("resize", onResize);
+
+    function animate() {
+      if (!bossArena) return;
+      bossArena.raf = requestAnimationFrame(animate);
+      const t = performance.now() / 1000;
+      if (dying > 0) {
+        dying += 1 / 60;
+        bossGroup.scale.setScalar(0.5 + dying * 0.35);
+        bossGroup.position.y -= 0.03;
+        bossGroup.rotation.y += 0.15;
+        if (dying > 1.2) {
+          finishBossWin();
+          return;
+        }
+      } else {
+        const rage = enraged ? 2.2 : 1;
+        bossGroup.position.y = 2.6 + Math.sin(t * 1.2 * rage) * 0.25;
+        bossGroup.position.x += (0 - bossGroup.position.x) * 0.02;
+        bossGroup.rotation.y = Math.sin(t * 0.5 * rage) * 0.35;
+      }
+      if (flash > 0) {
+        flash = Math.max(0, flash - 0.08);
+        bodyMat.emissiveIntensity = (enraged ? 0.7 : 0.35) + flash * 2.2;
+      }
+      for (const b of bugGroups) {
+        b.obj.position.x += Math.cos(b.obj.userData.dir) * b.obj.userData.speed * 0.016;
+        b.obj.position.z += Math.sin(b.obj.userData.dir) * b.obj.userData.speed * 0.016;
+        if (Math.abs(b.obj.position.x) > 6 || Math.abs(b.obj.position.z) > 5) b.obj.userData.dir += Math.PI / 2;
+        b.obj.rotation.y = -b.obj.userData.dir;
+      }
+      // Adaptive quality: sustained slow frames drop the pixel ratio to 1.
+      const nowMs = performance.now();
+      if (lastFrame) {
+        if (nowMs - lastFrame > 26) hotStreak++;
+        else hotStreak = Math.max(0, hotStreak - 2);
+        if (hotStreak > 90 && renderer.getPixelRatio() > 1) {
+          renderer.setPixelRatio(1);
+          hotStreak = 0;
+        }
+      }
+      lastFrame = nowMs;
+      renderer.render(scene, camera);
+    }
+
+    bossArena = { renderer, wrap, raf: 0, timer: 0, onResize };
+    animate();
+    scheduleBossBugs();
+    alertUser("الزعيم وصل! 20 ضربة للتخلص منه");
+    const intro = document.createElement("div");
+    intro.className = "boss-intro";
+    intro.textContent = "👾 الزعيم";
+    wrap.appendChild(intro);
+    setTimeout(() => intro.remove(), 2500);
+  }
+
   function looser(title, icon, paragraph) {
+    disposeArena();
     clearInterval(gameLoop);
     document.querySelector("#save").remove();
     clearInterval(gameTimer);
@@ -1019,6 +1402,7 @@ function startGame() {
     if (!isGameRunning) return;
 
     isGameRunning = false;
+    disposeArena();
     clearInterval(gameTimer);
     gameEndTime = new Date();
 
@@ -1061,8 +1445,10 @@ function startGame() {
     }
   }
 
-  // Shared cheater ending: forged score, forged DOM counters, or taking Lahnt's deal.
-  function caughtCheating(gameDuration) {
+  // Shared cheater ending. viaLahnt picks the subline: taking Lahnt's deal
+  // earns "لهنت خدعك", hand-cheating keeps "الغشاش يُكشَف دائماً".
+  function caughtCheating(gameDuration, viaLahnt = false) {
+    disposeArena();
     publishScore({
       name: currentNickname(),
       score,
@@ -1071,12 +1457,13 @@ function startGame() {
       cheat: true
     });
     console.log("redirected to cheaters page");
+    const subline = viaLahnt ? "لهنت خدعك 👀" : "الغشاش يُكشَف دائماً 👀";
     document.body.innerHTML = `
       <div class="cheaterPage">
         <div class="blood-bar"></div>
         <div class="blood-drips"></div>
         <p class="cheaterText" data-text="Why are you cheating ?">Why are you cheating ?</p>
-        <p class="cheaterSub" dir="rtl">الغشاش يُكشَف دائماً 👀</p>
+        <p class="cheaterSub" dir="rtl">${subline}</p>
       </div>`;
     const drips = document.querySelector(".blood-drips");
     for (let i = 0; i < 14; i++) {
