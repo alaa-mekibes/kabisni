@@ -882,6 +882,15 @@ function startGame() {
       </div>`;
     document.querySelector(".main_container").appendChild(trap);
 
+    // Missed your chance: Lahnt leaves after 6s.
+    setTimeout(() => {
+      const open = document.querySelector(".lahnt-trap");
+      if (open) {
+        open.style.animation = "fade-out 0.4s";
+        setTimeout(() => open.remove(), 400);
+      }
+    }, 6000);
+
     trap.querySelector(".lahnt-yes").addEventListener("click", () => {
       if (!isGameRunning) return;
       isGameRunning = false;
@@ -894,7 +903,73 @@ function startGame() {
 
     trap.querySelector(".lahnt-no").addEventListener("click", () => {
       trap.remove();
-      alertUser("قرار حكيم يا مكبس، التكبيس الشريف يكسب");
+      alertUser("أحسنت أيها المكبس، التكبيس الحكيم مفيد");
+    });
+  }
+
+  // The Hoarding Bug: from 50s on, a bug crawls out every 2s (up to 10) and each
+  // one eats 1 score/sec — with a red -1 marker — until double-clicked dead.
+  // Draining stops at 0 so the anti-cheat score == storePoints-delta
+  // invariant can never break.
+  const yippyAudio = document.createElement("audio");
+  yippyAudio.src = "assets/sound/Yippee.mp3";
+  let bugSpawns = 0;
+  let bugsKilled = 0;
+  const maxBugSpawns = 10;
+
+  setTimeout(() => {
+    if (!isGameRunning) return;
+    spawnBugLoop();
+  }, 50000);
+
+  function spawnBugLoop() {
+    if (!isGameRunning || bugSpawns >= maxBugSpawns) return;
+    spawnBug();
+    bugSpawns++;
+    setTimeout(spawnBugLoop, 2000);
+  }
+
+  function spawnBug() {
+    if (!isGameRunning) return;
+    const post = randomPosition();
+    const bug = document.createElement("img");
+    bug.src = "assets/img/Hoarding_Bug_Lethal_Company.png";
+    bug.alt = "هورينغ";
+    bug.classList.add("bug");
+    document.querySelector(".main_container").appendChild(bug);
+    bug.style.cssText = `position: absolute; width: 60px; z-index: 8; left: calc(${Math.abs(post.randX)}% - 50px); top: calc(${Math.abs(post.randY)}% - 50px); cursor: pointer; animation: bug linear 2s infinite;`;
+    yippyAudio.play();
+    // Warn once, and spell out the double-click so nobody misses it.
+    if (bugSpawns === 0) {
+      alertUser("إنتبه من الهورينغ... اضغط عليه مرتين للتخلص منه !!");
+    }
+
+    const scoreEat = setInterval(() => {
+      if (!isGameRunning) {
+        clearInterval(scoreEat);
+        return;
+      }
+      if (document.contains(bug)) {
+        if (score > 0) {
+          score--;
+          if (updateScore) {
+            updateScore();
+            pointMinus("-1", post.randX, Math.max(2, post.randY - 8));
+          }
+        }
+      } else {
+        clearInterval(scoreEat);
+      }
+    }, 1000);
+
+    bug.addEventListener("dblclick", () => {
+      bug.remove();
+      clearInterval(scoreEat);
+      bugsKilled++;
+      // No toast per kill — only when the whole wave is wiped out.
+      if (bugsKilled >= maxBugSpawns && isGameRunning) {
+        alertUser("انتهت غارة الهورينغ، أحسنت أيها المكبس!");
+      }
     });
   }
 
