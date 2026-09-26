@@ -205,6 +205,25 @@ h6 {
 .pass {
   position: relative;
 }
+/* name gate: one field, fill the card */
+#nickname .inputs input {
+  width: 100%;
+}
+/* shown by main.js when the entry script crashes on load */
+.fatalError {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  text-align: center;
+  background: rgba(20, 20, 20, 0.92);
+  color: #ff8a80;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
 .cheaterText {
     display: flex;
     justify-content: center;
