@@ -13,7 +13,7 @@
       property="og:description"
       content="كبسني لعبة ويب إدمانية! اجمع النقاط، حارب حشرات الهورينغ، أنقذ صديقك لهنت، وواجه البوس الشرير في عالم رمادي مليء بالتحديات. ابدأ اللعب فوراً بدون حساب، وتنافس مع أفضل الكابسين!"
     />
-    <meta property="og:url" content="https://chakhabit.github.io/kabisni" />
+    <meta property="og:url" content="https://alaa-mekibes.github.io/kabisni" />
     <meta property="og:type" content="website" />
     <meta property="og:image" content="https://i.ibb.co/TMshCMYb/Kabisni-thumbnail.png" />
     <link href="https://fonts.cdnfonts.com/css/funny" rel="stylesheet" />
@@ -89,12 +89,18 @@
         <button id="bestKabasin" title="أفضل الضائعين">أفضل الكباسين</button>
         </div>
       </div>
-      <!-- Start leaderBoarder -->
+      <!-- Start leaderBoarder (paused: soon placeholder; .others/.leader nodes stay
+           because renderLeaderboard() in main.js still writes to them) -->
       <div class="leaderBoarder box" style="display: none;">
         <div class="close_container">
           <button class="close">X</button>
         </div>
 
+        <div class="soon" dir="rtl">
+          <h3>قريباً</h3>
+          <p>لوحة الصدارة راجعة مع اللعب الجماعي</p>
+          <span class="dots" aria-hidden="true"></span>
+        </div>
         <ul class="others">
         </ul>
         <div class="leader">
@@ -116,7 +122,7 @@
     <!-- Start Footter -->
     <footer class="footer_container">
       <p>
-        &copy; <a href="https://github.com/chakhabit/kabisni">Alaa MEKIBES</a>
+        &copy; <a href="https://github.com/alaa-mekibes/kabisni">Alaa MEKIBES</a>
       </p>
             <!-- Timer -->
             <div id="timer" style="font-weight: 500; display: none;">0.0</div>
@@ -125,6 +131,6 @@
     <!-- Classic script, not type="module": modules are CORS-blocked on file://, which
          left the game dead when index.html was opened directly. ?v=2 busts the JS cache
          after a deploy so a stale main.js never meets a fresh index.html. -->
-    <script src="assets/js/main.js?v=2"></script>
+    <script src="assets/js/main.js?v=3"></script>
   </body>
 </html>

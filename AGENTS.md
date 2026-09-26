@@ -8,7 +8,7 @@ Static Arabic RTL browser game. No framework, no build, no tests, no package man
 - `index.html` loads the entry as `assets/js/main.js?v=2`. Bump `?v=` when shipping a change, otherwise a cached `main.js` can meet a fresh `index.html` and the page dies silently.
 - A load-time crash now paints a `.fatalError` overlay (registered first thing in `main.js`). If a user reports a dead page, read that message before debugging game logic.
 - After a deploy, ask testers for a hard refresh (Ctrl+Shift+R).
-- Live site: https://chakhabit.github.io/kabisni/ (GitHub Pages from `main`).
+- Live site: https://alaa-mekibes.github.io/kabisni/ (GitHub Pages from `main`).
 
 ## Structure
 - `index.html` — all UI markup (name gate, start menu, store, leaderboard, enemy). Entry point.
@@ -30,6 +30,8 @@ Static Arabic RTL browser game. No framework, no build, no tests, no package man
 - `isGameRunning` gates store/score reads; `pointsInsertBeforeStart()` only fills UI pre-game.
 - Save button (`#save`) is disabled for first 10s, then binds `endGame({once:true})`; `endGame` reloads page after 11s.
 - Anti-cheat `isScoreValid()`: rejects `score > duration*10` or `score != newStorePoints - oldStorePoints`, wipes DOM and marks the row `cheat`. Do not "fix" score math without preserving this invariant.
+- `caughtCheating()` is the shared cheater ending (wipe DOM, cheater page + sound, `cheat` row). When the sound ends — or after an 8s fallback — it reloads home. Used by `endGame()` and by Lahnt's honeypot.
+- Lahnt's honeypot (`showLahntTrap()`): 20s into a run, Lahnt slides in fixed bottom-right (`.lahnt-trap`, `Hi.mp3`, `assets/img/lahnt.png`) saying "تريد +9999 نقطة؟ انه غير قانوني ههه 👀". "نعم" calls `caughtCheating()`; "لا" dismisses with praise. Guarded by `isGameRunning`, shown once per run.
 - `detectTampering()` is the inspect-element guard: `score` is mirrored from the `clicks` ledger (never the source of truth), the DOM `.score span` / `#pointStore` must still match internal values at game over, `peakClicksPerSecond` must stay under `MAX_CLICKS_PER_SECOND` (20, a burst ceiling), and synthetic clicks (`!e.isTrusted`) are ignored. It deliberately does **not** re-check the `duration*10` cap — two clocks disagreeing there falsely accused honest fast players. All client-side, so it is deterrence, not a guarantee.
 - Skins persist in `localStorage` keys `shape`/`color`/`animation`, restored by `rememberTheSkin()`.
 - Large commented-out blocks (Lv2 bug enemy, `yippy` loop) are dead code, intentionally kept; don't delete without asking.

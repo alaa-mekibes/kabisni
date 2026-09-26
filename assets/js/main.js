@@ -595,7 +595,7 @@ document.querySelector("#abd").addEventListener("click", e => {
 
 // click before start
 let cheeter = _ => {
-  alertUser("لا تحاول الغش أيها الوغد");
+  alertUser("لا تحاول الغش أيها الجميل");
   document.body.style.animation = "rotate 2s ease";
 };
 document.querySelector(".player").addEventListener("click", cheeter, { once: true });
@@ -857,6 +857,47 @@ function startGame() {
     document.getElementById("save").addEventListener("click", endGame, { once: true });
   }, 10000);
 
+  // Lahnt's honeypot: 20s in he slides up bottom-right offering +9999 points.
+  // Taking the deal is cheating, so "yes" ends on the cheater page.
+  setTimeout(() => {
+    if (!isGameRunning) return;
+    showLahntTrap();
+  }, 20000);
+
+  function showLahntTrap() {
+    if (document.querySelector(".lahnt-trap")) return;
+    const hi = document.createElement("audio");
+    hi.src = "assets/sound/Hi.mp3";
+    hi.play();
+
+    const trap = document.createElement("div");
+    trap.className = "lahnt-trap";
+    trap.dir = "rtl";
+    trap.innerHTML = `
+      <img src="assets/img/lahnt.png" alt="لهنت">
+      <p>تريد <strong>+9999</strong> نقطة؟ انه غير قانوني ههه 👀</p>
+      <div class="lahnt-buttons">
+        <button class="lahnt-yes">نعم</button>
+        <button class="lahnt-no">لا</button>
+      </div>`;
+    document.querySelector(".main_container").appendChild(trap);
+
+    trap.querySelector(".lahnt-yes").addEventListener("click", () => {
+      if (!isGameRunning) return;
+      isGameRunning = false;
+      clearInterval(gameTimer);
+      clearInterval(loop);
+      clearInterval(gameLoop);
+      gameEndTime = new Date();
+      caughtCheating((gameEndTime - gameStartTime) / 1000);
+    });
+
+    trap.querySelector(".lahnt-no").addEventListener("click", () => {
+      trap.remove();
+      alertUser("قرار حكيم يا مكبس، التكبيس الشريف يكسب");
+    });
+  }
+
   function looser(title, icon, paragraph) {
     clearInterval(gameLoop);
     document.querySelector("#save").remove();
@@ -934,19 +975,31 @@ function startGame() {
         alertUser("نتيجتك السابقة لا تزال الأفضل!");
       }
     } else {
-      publishScore({
-        name: currentNickname(),
-        score,
-        storePoints,
-        duration: gameDuration,
-        cheat: true
-      });
-      console.log("redirected to cheaters page");
-      document.body.innerHTML = `<p class="cheaterText">Why are you cheating ?</p>`;
-      const iHateCheaters = document.createElement("audio");
-      iHateCheaters.src = "assets/sound/cheater.mp3";
-      iHateCheaters.play();
+      caughtCheating(gameDuration);
     }
+  }
+
+  // Shared cheater ending: forged score, forged DOM counters, or taking Lahnt's deal.
+  function caughtCheating(gameDuration) {
+    publishScore({
+      name: currentNickname(),
+      score,
+      storePoints,
+      duration: gameDuration,
+      cheat: true
+    });
+    console.log("redirected to cheaters page");
+    document.body.innerHTML = `<p class="cheaterText">Why are you cheating ?</p>`;
+    const iHateCheaters = document.createElement("audio");
+    iHateCheaters.src = "assets/sound/cheater.mp3";
+    iHateCheaters.play();
+    // Back home once the shame anthem finishes; fallback reload in case it can't play.
+    iHateCheaters.addEventListener("ended", () => {
+      location.reload();
+    });
+    setTimeout(() => {
+      location.reload();
+    }, 8000);
   }
 
   function updateGameTimer() {
