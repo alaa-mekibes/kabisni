@@ -814,15 +814,22 @@ function startGame() {
       point.remove();
     }, 500);
   }
-  function pointMinus(p, X, Y) {
+  // -1 pinned to the bug's real on-screen rect: the bug lives inside
+  // .main_container while body-level % coordinates resolve against the whole
+  // page, so sharing the bug's percentages could never line up.
+  function pointMinus(p, bugEl) {
+    const r = bugEl.getBoundingClientRect();
     let point = document.createElement("span");
     point.textContent = p;
     point.style.cssText = `
-      position: absolute;
-      left: calc(${Math.abs(X)}% - 50px);
-      top: calc(${Math.abs(Y)}% - 50px);
-      color: red;
-      font-weight: bold;
+      position: fixed;
+      left: ${r.left + r.width / 2}px;
+      top: ${r.top - 6}px;
+      transform: translate(-50%, -100%);
+      color: #ff2d2d;
+      font-size: 1.5rem;
+      font-weight: 900;
+      text-shadow: 0 2px 3px rgba(0, 0, 0, 0.85), 0 0 8px rgba(0, 0, 0, 0.6);
       z-index: 10;
       user-select: none;
       pointer-events: none;
@@ -831,12 +838,12 @@ function startGame() {
     document.body.appendChild(point);
     setTimeout(() => {
       point.style.opacity = "0";
-      point.style.transform = "translateY(-20px)";
-    }, 0);
+      point.style.transform = "translate(-50%, calc(-100% - 20px))";
+    }, 600);
 
     setTimeout(() => {
       point.remove();
-    }, 500);
+    }, 1100);
   }
 
   // Click The Circle
@@ -903,7 +910,7 @@ function startGame() {
 
     trap.querySelector(".lahnt-no").addEventListener("click", () => {
       trap.remove();
-      alertUser("أحسنت أيها المكبس، التكبيس الحكيم مفيد");
+      alertUser("أحسنت أيها المكبس، التكبيس الشريف مفيد");
     });
   }
 
@@ -937,7 +944,7 @@ function startGame() {
     bug.alt = "هورينغ";
     bug.classList.add("bug");
     document.querySelector(".main_container").appendChild(bug);
-    bug.style.cssText = `position: absolute; width: 60px; z-index: 8; left: calc(${Math.abs(post.randX)}% - 50px); top: calc(${Math.abs(post.randY)}% - 50px); cursor: pointer; animation: bug linear 2s infinite;`;
+    bug.style.cssText = `position: absolute; width: 60px; z-index: 8; left: calc(${Math.abs(post.randX)}% - 50px); top: calc(${Math.abs(post.randY)}% - 50px); cursor: pointer; animation: bug linear 2s infinite, bug-drain-pulse 1s ease-in-out infinite;`;
     yippyAudio.play();
     // Warn once, and spell out the double-click so nobody misses it.
     if (bugSpawns === 0) {
@@ -954,7 +961,7 @@ function startGame() {
           score--;
           if (updateScore) {
             updateScore();
-            pointMinus("-1", post.randX, Math.max(2, post.randY - 8));
+            pointMinus("-1", bug);
           }
         }
       } else {

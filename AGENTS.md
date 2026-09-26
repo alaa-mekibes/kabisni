@@ -5,7 +5,7 @@ Static Arabic RTL browser game. No framework, no build, no tests, no package man
 ## Run / preview
 - No `package.json`, build, lint, or test commands. Do not add tooling unprompted.
 - Preview: open `index.html` directly, or serve the repo root statically (e.g. `python -m http.server`). The entry is a **classic script, not `type="module"`** — modules are CORS-blocked on `file://`, which left the page dead with no error. `main.js` has no imports/exports; keep it that way, or the `file://` path breaks again.
-- `index.html` loads the entry as `assets/js/main.js?v=2`. Bump `?v=` when shipping a change, otherwise a cached `main.js` can meet a fresh `index.html` and the page dies silently.
+- `index.html` loads the entry as `assets/js/main.js?v=4`. Bump `?v=` when shipping a change, otherwise a cached `main.js` can meet a fresh `index.html` and the page dies silently.
 - A load-time crash now paints a `.fatalError` overlay (registered first thing in `main.js`). If a user reports a dead page, read that message before debugging game logic.
 - After a deploy, ask testers for a hard refresh (Ctrl+Shift+R).
 - Live site: https://alaa-mekibes.github.io/kabisni/ (GitHub Pages from `main`).
@@ -25,6 +25,7 @@ Static Arabic RTL browser game. No framework, no build, no tests, no package man
 - `saveProgress()` keeps max `score` and always overwrites `storePoints` (old upsert semantics).
 - `publishScore()` signs each leaderboard row with FNV-1a + `secret`; `leaderboard()` drops rows whose signature no longer matches, so hand-edited `localStorage` scores never show.
 - Leaderboard is per-device only. A real online board needs a backend; nothing here can provide cross-device ranking.
+- `#bestKabasin` (أفضل الكباسين) is hidden via CSS until the leaderboard returns. The button node stays in the DOM so its JS listener keeps binding cleanly.
 
 ## Game logic gotchas (`main.js`)
 - `isGameRunning` gates store/score reads; `pointsInsertBeforeStart()` only fills UI pre-game.

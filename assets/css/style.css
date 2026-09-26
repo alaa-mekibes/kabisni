@@ -714,6 +714,7 @@ h6 {
     }
   }
   #bestKabasin {
+    display: none;
     margin-top: auto;
     width: 70%;
     background: linear-gradient(180deg, var(--gold-soft), #ffd700);
@@ -837,6 +838,16 @@ h6 {
   }
   100% {
     transform: translate(0, 0);
+  }
+}
+/* red pulse on live bugs: marks exactly which ones are draining you */
+@keyframes bug-drain-pulse {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 3px rgba(255, 0, 0, 0.45));
+  }
+  50% {
+    filter: drop-shadow(0 0 14px rgba(255, 0, 0, 0.95));
   }
 }
 @keyframes fade-in {
