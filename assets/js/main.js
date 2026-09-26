@@ -631,23 +631,14 @@ let cheeter = (_) => {
 };
 document.querySelector(".player").addEventListener("click", cheeter, { once: true });
 
-// before starting !
-function enemyShowBeforeSatart(show) {
-  if(show) {
-  setTimeout(() => {
-    const spaceVoice = document.createElement("audio");
-    spaceVoice.src = "assets/sound/space-sound.mp3"
-    document.querySelector(".enemy").style.display = "block";
-    spaceVoice.play();
-    setTimeout(() => {
-      document.querySelector(".enemy").style.display = "none";
-    }, 4000);
-  }, 5000);
-} else {
-    document.querySelector(".enemy").style.display = "none";
+function randomPosition() {
+    let randX = parseInt(Math.random() * 100);
+    let randY = parseInt(Math.random() * 100);
+    if (randX < 12) randX += 14;
+    if (randY < 12) randY += 14;
+    return {randX, randY};
 }
-}
-enemyShowBeforeSatart(true);
+
 // Start The Game ====================================================================
 let gameStartTime;
 let gameEndTime;
@@ -671,14 +662,30 @@ async function startGame() {
     document.querySelector("#start_menu").style.display = "none";
   }, 999);
 
+  function enemyShowBeforeSatart() {
+  // setTimeout(() => {
+  //   const spaceVoice = document.createElement("audio");
+  //   spaceVoice.src = "assets/sound/space-sound.mp3"
+  //   document.querySelector(".enemy").style.display = "block";
+  //   document.querySelector(".enemy").style.right = "-100%";
+  //   document.querySelector(".enemy").style.animation = "rtl 4s ease-out infinite";
+  //   spaceVoice.play();
+  //   setTimeout(() => {
+  //     document.querySelector(".enemy").style.display = "none";
+  //   }, 4000);
+  // }, 5000);
+}
+
+enemyShowBeforeSatart();
+
   setTimeout(() => {
-    alertUser("لا تنسى حفظ تقدمك بعد الانتهاء")
+    alertUser("لا تنسى حفظ تقدمك بعد الانتهاء");
   }, 5000);
 
   // Level 1
   let circle = document.querySelector(".player");
   let score = 0;
-  let vittese = 2000;
+  let vittese = 100;
   let preScore = score;
   let scoreDisplay = document.querySelector(".score span");
   let storePointsCase =  document.querySelector("#pointStore");
@@ -701,13 +708,10 @@ function updateScore() {
 
   function randomly() {
     count++;
-    let randX = parseInt(Math.random() * 100);
-    let randY = parseInt(Math.random() * 100);
-    if (randX < 12) randX += 12;
-    if (randY < 12) randY += 12;
+    let post = randomPosition();
     circle.style.cssText = `left: calc(${Math.abs(
-      randX
-    )}% - 50px); top: calc(${Math.abs(randY)}% - 50px)`;
+      post.randX
+    )}% - 50px); top: calc(${Math.abs(post.randY)}% - 50px)`;
     if (count % 3 === 0 && vittese > 100) {
       clearInterval(loop);
       vittese = Math.max(vittese - 100, 100);
@@ -721,69 +725,62 @@ function updateScore() {
   }
   // Start Level 2
   function moveCircle() {
-    let randX = parseInt(Math.random() * 100);
-    let randY = parseInt(Math.random() * 100);
-    if (randX < 12) randX += 12;
-    if (randY < 12) randY += 12;
-
-    circle.style.cssText = `left: calc(${Math.abs(randX)}% - 50px); 
-                           top: calc(${Math.abs(randY)}% - 50px)`;
+    let post = randomPosition();
+    circle.style.cssText = `left: calc(${Math.abs(post.randX)}% - 50px); 
+                           top: calc(${Math.abs(post.randY)}% - 50px)`;
   }
 
   let gameLoop;
   function startLv2() {
     gameLoop = setInterval(moveCircle, 900);
-    alertUser("إنتبه من الهورينغ... تخلص منه !!");
-    yippyLoop();
+    // alertUser("إنتبه من الهورينغ... تخلص منه !!");
+    // yippyLoop();
   }
 
-  const yippyAudio = document.createElement("audio");
-  yippyAudio.src = "assets/sound/Yippee.mp3";
-  let yippyIteration = 0;
-  const maxYippyIteration = 10;
-  function yippyLoop() {
-    if (yippyIteration >= maxYippyIteration) return;
-    yippy();
-    yippyIteration++;
-    let yippyTime = setTimeout(yippyLoop, 2000);
-    // condition for lv3
-    if (yippyIteration === 10) {
-      clearTimeout(yippyTime);
+  // const yippyAudio = document.createElement("audio");
+  // yippyAudio.src = "assets/sound/Yippee.mp3";
+  // let yippyIteration = 0;
+  // const maxYippyIteration = 10;
+  // function yippyLoop() {
+  //   if (yippyIteration >= maxYippyIteration) return;
+  //   yippy();
+  //   yippyIteration++;
+  //   let yippyTime = setTimeout(yippyLoop, 2000);
+  //   // condition for lv3
+  //   if (yippyIteration === 10) {
+  //     clearTimeout(yippyTime);
       verifyLv2();
-    }
-  }
-  function yippy() {
-    let randX = parseInt(Math.random() * 100);
-    let randY = parseInt(Math.random() * 100);
-    if (randX < 12) randX += 12;
-    if (randY < 12) randY += 12;
-    let bug = document.createElement("img");
-    bug.src = "assets/img/Hoarding_Bug_Lethal_Company.png";
-    bug.classList.add("bug");
-    circle.after(bug);
-    bug.style.cssText = `position: absolute; width: 50px; left: calc(${Math.abs(
-    randX
-  )}% - 50px); top: calc(${Math.abs(
-      randY
-    )}% - 50px); cursor: pointer; animation: bug linear 2s infinite`;
-    yippyAudio.play();
-    function yippyEatScore() {
-      if (document.contains(bug)) {
-        score--;
-        if(updateScore) {
-          updateScore()
-          pointMinus("-1", randX, randY);
-        } 
-      } else {
-        clearInterval(scoreEat);
-      }
-    }
-    let scoreEat = setInterval(yippyEatScore, 1000);
-    bug.addEventListener("dblclick", (_) => {
-      bug.remove();
-      clearInterval(scoreEat);
-    });
-  }
+  //   }
+  // }
+  // function yippy() {
+  //   let post = randomPosition();
+  //   let bug = document.createElement("img");
+  //   bug.src = "assets/img/Hoarding_Bug_Lethal_Company.png";
+  //   bug.classList.add("bug");
+  //   circle.after(bug);
+  //   bug.style.cssText = `position: absolute; width: 50px; left: calc(${Math.abs(
+  //   post.randX
+  // )}% - 50px); top: calc(${Math.abs(
+  //     post.randY
+  //   )}% - 50px); cursor: pointer; animation: bug linear 2s infinite`;
+  //   yippyAudio.play();
+  //   function yippyEatScore() {
+  //     if (document.contains(bug)) {
+  //       score--;
+  //       if(updateScore) {
+  //         updateScore()
+  //         pointMinus("-1", randX, randY);
+  //       } 
+  //     } else {
+  //       clearInterval(scoreEat);
+  //     }
+  //   }
+  //   let scoreEat = setInterval(yippyEatScore, 1000);
+  //   bug.addEventListener("dblclick", (_) => {
+  //     bug.remove();
+  //     clearInterval(scoreEat);
+  //   });
+  // }
   // Verify Level 2
   function verifyLv2() {
     setTimeout(() => {
@@ -798,6 +795,14 @@ function updateScore() {
   // Press This Level 3
 function startLv3() {
   console.log("3");
+
+      const spaceVoice = document.createElement("audio");
+    spaceVoice.src = "assets/sound/space-sound.mp3"
+    let finalBoss = document.querySelector(".enemy");
+    finalBoss.style.cssText = "position: absolute;top: 25%;left: calc(46%);transform: translateX(-50%);z-index: 9;animation: 1s linear infinite alternate finalBoss; display: block";
+    spaceVoice.play();
+    
+
 }
   // point + - display
   function pointPlus(p, myEvent) {
@@ -851,6 +856,7 @@ function startLv3() {
   // Click The Circle
   let circleClicker =  circle.addEventListener("click", (e) => {
     score++;
+    circle.style.scale = "1.03";
     if(updateScore) {
       updateScore();
       pointPlus("+1", e);

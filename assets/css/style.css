@@ -227,11 +227,9 @@ h6 {
 .enemy {
   position: absolute;
   top: 50%;
-  right: -100%;
   transform: translateY(-50%);
   mix-blend-mode: exclusion;
   z-index: 9;
-  animation: rtl 4s ease-out infinite;
   display: none;
 }
 .leaderBoarder {
@@ -295,7 +293,7 @@ h6 {
     }
   }
   .others {
-    background-color: #f15946;
+    background-color: #f15946d1;
     height: 100%;
     width: 50%;
     display: flex;
@@ -515,7 +513,7 @@ h6 {
   }
 }
 .start {
-  background-color: #f15946;
+  background-color: #f15946d1;
   box-shadow: 0 0 20px rgba(0, 255, 127, 0.3);
   color: #e2fdff;
   padding: 2rem 1rem;
@@ -711,6 +709,14 @@ h6 {
   }
   100% {
     rotate: -360deg;
+  }
+}
+@keyframes finalBoss {
+  0% {
+    left: 39%;
+  }
+  100% {
+    left: 49%;
   }
 }
 /* Shapes */
