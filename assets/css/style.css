@@ -264,18 +264,234 @@ h6 {
   font-size: 1.25rem;
   font-weight: 700;
 }
+/* Cheat page: full horror scene — glitch-slice headline, falling blood,
+   vignette + flicker. Transform/opacity only, with reduced-motion fallback. */
+.cheaterPage {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem 1rem;
+  overflow: hidden;
+  background: radial-gradient(ellipse 70% 55% at 50% 45%, #2a0000 0%, #120000 55%, #030000 100%);
+  animation: cheater-shake 0.6s ease-in-out 2;
+}
+.cheaterPage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, 0.75) 100%);
+}
 .cheaterText {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    font-family: 'Horror Type', sans-serif;
-    font-size: clamp(2rem, 8rem, 10rem);
-    color: #7c0200;
-    text-shadow: 0 4px 24px rgba(124, 2, 0, 0.35);
-    letter-spacing: 0.01em;
-    user-select: none;
-    text-align: center;
+  position: relative;
+  font-family: 'Horror Type', sans-serif;
+  font-size: clamp(2.5rem, 9vw, 8rem);
+  color: #e8e0e0;
+  letter-spacing: 0.04em;
+  user-select: none;
+  text-align: center;
+  text-shadow: -2px 0 rgba(180, 0, 0, 0.6), 2px 0 rgba(100, 0, 0, 0.6), 0 0 28px rgba(139, 0, 0, 0.55);
+  animation: cheater-twitch 2.6s steps(1) infinite;
+}
+.cheaterText::before,
+.cheaterText::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+}
+.cheaterText::before {
+  color: #ff2222;
+  animation: cheater-slice-a 2.6s steps(1) infinite;
+}
+.cheaterText::after {
+  color: #00c8c8;
+  animation: cheater-slice-b 2.6s steps(1) infinite;
+}
+@keyframes cheater-twitch {
+  0%,
+  100% {
+    text-shadow: -2px 0 rgba(180, 0, 0, 0.6), 2px 0 rgba(100, 0, 0, 0.6), 0 0 28px rgba(139, 0, 0, 0.55);
+    transform: translate(0, 0);
+  }
+  11% {
+    text-shadow: -7px 0 #dc2626, 7px 0 rgba(255, 110, 110, 0.7), 0 0 44px #8b0000;
+    transform: translate(-5px, 2px);
+  }
+  14%,
+  30% {
+    text-shadow: -2px 0 rgba(180, 0, 0, 0.6), 2px 0 rgba(100, 0, 0, 0.6), 0 0 28px rgba(139, 0, 0, 0.55);
+    transform: translate(0, 0);
+  }
+  33% {
+    text-shadow: 10px -4px #8b0000, -10px 4px rgba(255, 0, 0, 0.5), 0 0 60px rgba(139, 0, 0, 0.8);
+    transform: translate(7px, -4px);
+  }
+  36%,
+  58% {
+    text-shadow: -2px 0 rgba(180, 0, 0, 0.6), 2px 0 rgba(100, 0, 0, 0.6), 0 0 28px rgba(139, 0, 0, 0.55);
+    transform: translate(0, 0);
+  }
+  61% {
+    text-shadow: -16px 6px #dc2626, 16px -6px rgba(180, 0, 0, 0.85), 0 0 70px rgba(139, 0, 0, 0.6);
+    transform: translate(-9px, 5px);
+  }
+  64%,
+  90% {
+    text-shadow: -2px 0 rgba(180, 0, 0, 0.6), 2px 0 rgba(100, 0, 0, 0.6), 0 0 28px rgba(139, 0, 0, 0.55);
+    transform: translate(0, 0);
+  }
+  93% {
+    text-shadow: -22px 0 #dc2626, 22px 0 rgba(100, 0, 0, 1), 0 0 80px rgba(139, 0, 0, 0.7);
+    transform: translate(-12px, 0);
+  }
+  96% {
+    text-shadow: 12px 8px #8b0000;
+    transform: translate(7px, 5px);
+  }
+}
+@keyframes cheater-slice-a {
+  0%,
+  88%,
+  100% {
+    clip-path: inset(0 0 100% 0);
+    transform: none;
+    opacity: 0;
+  }
+  89% {
+    clip-path: inset(10% 0 55% 0);
+    transform: translate(-8px, 0);
+    opacity: 0.9;
+  }
+  92% {
+    clip-path: inset(60% 0 8% 0);
+    transform: translate(7px, 0);
+    opacity: 0.9;
+  }
+  95% {
+    clip-path: inset(0 0 100% 0);
+    opacity: 0;
+  }
+}
+@keyframes cheater-slice-b {
+  0%,
+  60%,
+  100% {
+    clip-path: inset(0 0 100% 0);
+    transform: none;
+    opacity: 0;
+  }
+  61% {
+    clip-path: inset(45% 0 30% 0);
+    transform: translate(9px, 0);
+    opacity: 0.85;
+  }
+  64% {
+    clip-path: inset(5% 0 75% 0);
+    transform: translate(-6px, 0);
+    opacity: 0.85;
+  }
+  67% {
+    clip-path: inset(0 0 100% 0);
+    opacity: 0;
+  }
+}
+@keyframes cheater-shake {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(-4px, 2px);
+  }
+  50% {
+    transform: translate(4px, -2px);
+  }
+  75% {
+    transform: translate(-2px, -2px);
+  }
+}
+.cheaterSub {
+  color: #b9a3a3;
+  font-size: 1.25rem;
+  font-weight: 700;
+  user-select: none;
+  animation: cheater-flicker 3s linear infinite;
+}
+@keyframes cheater-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  41% {
+    opacity: 1;
+  }
+  42% {
+    opacity: 0.4;
+  }
+  43% {
+    opacity: 1;
+  }
+  71% {
+    opacity: 1;
+  }
+  72% {
+    opacity: 0.6;
+  }
+  73% {
+    opacity: 1;
+  }
+}
+.blood-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, transparent 8%, #8b0000 22%, #dc2626 32%, transparent 45%, #8b0000 60%, #dc2626 72%, transparent 88%);
+  box-shadow: 0 0 14px rgba(220, 38, 38, 0.8);
+}
+.blood-drips {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.blood-drip {
+  position: absolute;
+  top: -120px;
+  width: 3px;
+  border-radius: 0 0 3px 3px;
+  background: linear-gradient(to bottom, #dc2626, rgba(139, 0, 0, 0));
+  animation: blood-fall linear infinite;
+}
+@keyframes blood-fall {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(115vh);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cheaterPage,
+  .cheaterText,
+  .cheaterText::before,
+  .cheaterText::after,
+  .cheaterSub,
+  .blood-drip {
+    animation: none;
+  }
 }
 /* Start main */
 .main_container {

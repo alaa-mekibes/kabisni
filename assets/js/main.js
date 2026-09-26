@@ -1071,7 +1071,23 @@ function startGame() {
       cheat: true
     });
     console.log("redirected to cheaters page");
-    document.body.innerHTML = `<p class="cheaterText">Why are you cheating ?</p>`;
+    document.body.innerHTML = `
+      <div class="cheaterPage">
+        <div class="blood-bar"></div>
+        <div class="blood-drips"></div>
+        <p class="cheaterText" data-text="Why are you cheating ?">Why are you cheating ?</p>
+        <p class="cheaterSub" dir="rtl">الغشاش يُكشَف دائماً 👀</p>
+      </div>`;
+    const drips = document.querySelector(".blood-drips");
+    for (let i = 0; i < 14; i++) {
+      const drip = document.createElement("span");
+      drip.className = "blood-drip";
+      drip.style.left = Math.random() * 100 + "%";
+      drip.style.height = 40 + Math.random() * 90 + "px";
+      drip.style.animationDuration = 1.6 + Math.random() * 2.2 + "s";
+      drip.style.animationDelay = (Math.random() * 2).toFixed(2) + "s";
+      drips.appendChild(drip);
+    }
     const iHateCheaters = document.createElement("audio");
     iHateCheaters.src = "assets/sound/cheater.mp3";
     iHateCheaters.play();
