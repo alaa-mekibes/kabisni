@@ -26,7 +26,8 @@ const KEYS = {
   nickname: "kabisni:nickname",
   progress: "kabisni:progress",
   scores: "kabisni:scores",
-  secret: "kabisni:secret"
+  secret: "kabisni:secret",
+  ambience: "kabisni:ambience"
 };
 const LEADERBOARD_SIZE = 10;
 const MAX_LEADERBOARD_ROWS = 50;
@@ -495,6 +496,34 @@ function store() {
       generateRowColors();
       pointStoreVerification();
     });
+    document.getElementById("sounds").addEventListener("click", () => {
+      document.querySelectorAll(".row").forEach(e => {
+        e.remove();
+      });
+      const list = document.createElement("div");
+      // .row too: the tab cleaners above wipe it when switching tabs.
+      list.classList.add("row", "sounds-list");
+      Object.keys(AMBIENCES).forEach(name => {
+        const b = document.createElement("button");
+        b.textContent = AMBIENCES[name].label;
+        if (currentAmbience() === name) b.classList.add("selected");
+        b.addEventListener("click", () => {
+          writeStore(KEYS.ambience, name);
+          list.querySelectorAll("button").forEach(x => x.classList.remove("selected"));
+          b.classList.add("selected");
+          // Preview: swaps live mid-run, plays a short sample outside one.
+          stopAmbience();
+          if (name !== "off") {
+            startAmbience(name);
+            if (!isGameRunning) {
+              setTimeout(() => stopAmbience(), 2500);
+            }
+          }
+        });
+        list.appendChild(b);
+      });
+      menu.after(list);
+    });
   }
   menuSection();
 
@@ -625,6 +654,68 @@ const INVADER_SPRITE = [
   "X.X.....X.X",
   "...XX.XX..."
 ];
+// Ambience engine, generated — no audio files, no music. Looped noise through
+// a filter with an LFO for movement. Created on user gesture (Start/select).
+const AMBIENCES = {
+  wind: { label: "رياح 🌬", type: "lowpass", freq: 400, gain: 0.0575, lfoRate: 0.13, lfoDepth: 0.0345, lfoTarget: "gain" },
+  rain: { label: "مطر 🌧", type: "highpass", freq: 2200, gain: 0.035, lfoRate: 2.5, lfoDepth: 0.008, lfoTarget: "gain" },
+  ocean: { label: "أمواج 🌊", type: "lowpass", freq: 700, gain: 0.06, lfoRate: 0.1, lfoDepth: 350, lfoTarget: "freq" },
+  thunder: { label: "رعد ⛈", type: "lowpass", freq: 120, gain: 0.09, lfoRate: 0.05, lfoDepth: 0.05, lfoTarget: "gain" },
+  off: { label: "صامت 🔇" }
+};
+let ambienceNodes = null;
+function currentAmbience() {
+  const saved = readStore(KEYS.ambience, "wind");
+  return AMBIENCES[saved] ? saved : "wind";
+}
+function startAmbience(name) {
+  const recipe = AMBIENCES[name];
+  if (!recipe || name === "off") return;
+  stopAmbience();
+  try {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return;
+    const ctx = new Ctx();
+    const len = ctx.sampleRate * 3;
+    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;
+    const filter = ctx.createBiquadFilter();
+    filter.type = recipe.type;
+    filter.frequency.value = recipe.freq;
+    const gain = ctx.createGain();
+    gain.gain.value = recipe.gain;
+    const lfo = ctx.createOscillator();
+    lfo.frequency.value = recipe.lfoRate;
+    const lfoGain = ctx.createGain();
+    lfoGain.gain.value = recipe.lfoDepth;
+    lfo.connect(lfoGain);
+    if (recipe.lfoTarget === "freq") lfoGain.connect(filter.frequency);
+    else lfoGain.connect(gain.gain);
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    src.start();
+    lfo.start();
+    ambienceNodes = { ctx, src, lfo };
+  } catch (error) {
+    console.warn("ambience failed", error);
+  }
+}
+function stopAmbience() {
+  if (!ambienceNodes) return;
+  try {
+    ambienceNodes.src.stop();
+    ambienceNodes.lfo.stop();
+    ambienceNodes.ctx.close();
+  } catch (error) {
+    console.warn("ambience stop failed", error);
+  }
+  ambienceNodes = null;
+}
 // Burst ceiling only: a masher can spike past 10/s briefly, so keep headroom here.
 // The sustained limit is the duration * 10 rule inside isScoreValid().
 const MAX_CLICKS_PER_SECOND = 20;
@@ -638,6 +729,7 @@ function startGame() {
   gameStartTime = new Date();
   const startTimestamp = performance.now();
   gameTimer = setInterval(updateGameTimer, 1000);
+  startAmbience(currentAmbience());
   enemyShowBeforeSatart();
   // UI display : Block | none
   document.querySelector("#save").style.display = "block";
@@ -1364,6 +1456,7 @@ function startGame() {
 
   function looser(title, icon, paragraph) {
     disposeArena();
+    stopAmbience();
     clearInterval(gameLoop);
     document.querySelector("#save").remove();
     clearInterval(gameTimer);
@@ -1403,6 +1496,7 @@ function startGame() {
 
     isGameRunning = false;
     disposeArena();
+    stopAmbience();
     clearInterval(gameTimer);
     gameEndTime = new Date();
 
@@ -1449,6 +1543,7 @@ function startGame() {
   // earns "لهنت خدعك", hand-cheating keeps "الغشاش يُكشَف دائماً".
   function caughtCheating(gameDuration, viaLahnt = false) {
     disposeArena();
+    stopAmbience();
     publishScore({
       name: currentNickname(),
       score,
