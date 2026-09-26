@@ -424,9 +424,9 @@ h6 {
 }
 .main_container .store {
   position: absolute;
-  background-color: #fff9ef;
-  border-left: 1px solid rgba(0, 53, 84, 0.12);
-  box-shadow: -18px 0 40px -20px rgba(0, 30, 50, 0.45);
+  background: linear-gradient(180deg, #0b324e 0%, #062a41 55%, #041e2f 100%);
+  border-left: 1px solid var(--hairline-gold);
+  box-shadow: -18px 0 40px -20px rgba(0, 10, 20, 0.65);
   top: 0;
   right: 0;
   z-index: 55;
@@ -437,14 +437,46 @@ h6 {
   transition: 0.2s;
   animation: fade-in 0.1s linear;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 222, 2, 0.45) transparent;
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: rgba(255, 222, 2, 0.4);
+    border-radius: 3px;
+  }
+  /* cabinet title — no markup change */
+  &::before {
+    content: "المتجر";
+    display: block;
+    text-align: center;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: var(--main-color);
+    text-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+    padding: 0.5rem 0 0.25rem;
+  }
   .myPoints {
     p {
       user-select: none;
       text-align: end;
       margin-top: 1rem;
-      padding: 1rem 5px;
-      border-block: 1px solid #ccc;
+      padding: 0.8rem 0.75rem;
       white-space: pre;
+      color: var(--navy);
+      font-weight: 800;
+      background: linear-gradient(180deg, var(--gold-soft), var(--main-color));
+      border: none;
+      border-radius: 12px;
+      box-shadow: 0 8px 16px -10px rgba(0, 0, 0, 0.6);
+      &::before {
+        content: "🪙 ";
+      }
+      #pointStore {
+        font-variant-numeric: tabular-nums;
+        font-weight: 900;
+      }
     }
     .pointStore {
       display: block;
@@ -453,32 +485,39 @@ h6 {
   }
   .menu {
     text-align: center;
-    padding: 10px;
+    padding: 6px;
     margin-bottom: 10px;
+    background: rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
     li {
       display: inline-block;
       user-select: none;
 
       button {
-        background-color: #003554;
-        color: #fff;
-        padding: 2px 10px;
+        background-color: transparent;
+        color: #e2fdff;
+        padding: 4px 12px;
         font-size: 12px;
-        font-weight: 600;
-        border-radius: 5px;
+        font-weight: 700;
+        border-radius: 9px;
         cursor: pointer;
         border: none;
         transition: 0.2s;
-        box-shadow: 0 5px 10px -7px rgba(0, 0, 0, 0.6);
         &:hover {
-          background-color: #53b3cb;
+          color: var(--main-color);
+          background-color: rgba(255, 222, 2, 0.12);
         }
         &:active {
           transform: scale(0.94);
         }
+        &:focus {
+          background-color: var(--main-color);
+          color: var(--navy);
+        }
       }
       &:not(:last-child) {
-        margin-right: 20px;
+        margin-right: 6px;
       }
     }
   }
@@ -490,22 +529,37 @@ h6 {
     border-radius: 10px;
     margin-bottom: 10px;
     .box {
-      border: 1px solid rgba(0, 53, 84, 0.2);
-      border-radius: 0;
+      border: 1px dashed rgba(255, 255, 255, 0.25);
       width: 50%;
       height: 100%;
       border-radius: inherit;
       position: relative;
       pointer-events: none;
       overflow: hidden;
+      background: rgba(255, 255, 255, 0.05);
+      transition: transform 0.15s, box-shadow 0.2s, border-color 0.2s, background-color 0.2s;
       &:before {
-        content: "*";
+        content: "🔒";
         position: absolute;
         width: 100%;
         height: 100%;
-        background-color: #433c3c4f;
+        background-color: rgba(3, 15, 25, 0.72);
+        color: var(--main-color);
+        font-size: 1.3rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         top: 0;
         left: 0;
+        z-index: 2;
+      }
+      /* price tag the JS stamps inline — rethemed here so main.js stays untouched */
+      > span {
+        color: var(--main-color) !important;
+        font-weight: 800 !important;
+        font-size: 12px !important;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.7);
+        font-variant-numeric: tabular-nums;
       }
       .storeBox {
         position: absolute;
@@ -515,6 +569,14 @@ h6 {
         width: 50px;
         height: 50px;
         cursor: pointer;
+      }
+      &.Unlocked {
+        border: 1px solid var(--hairline-gold);
+        background: rgba(255, 222, 2, 0.07);
+        box-shadow: 0 0 0 1px rgba(255, 222, 2, 0.22), 0 10px 20px -12px rgba(0, 0, 0, 0.7);
+        &:hover {
+          transform: translateY(-2px);
+        }
       }
     }
   }
