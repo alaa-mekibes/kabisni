@@ -31,7 +31,7 @@ body {
   display: flex;
   flex-direction: column;
   height: 100svh;
-  background-image: url(../img/bg.png);
+  background-image: url(../img/bg.webp);
 }
 /* subtle grain over the backdrop only — breaks the flat digital look */
 body::after {

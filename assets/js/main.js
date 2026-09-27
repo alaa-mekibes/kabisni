@@ -1,12 +1,3 @@
-"use strict";
-// =======================================================================================
-// Kabisni | كبسني — main entry
-// No backend: no Supabase, no auth, no network calls. Everything lives in localStorage.
-// Sections: 1 local data · 2 anti-cheat · 3 name gate · 4 leaderboard · 5 store · 6 game
-// =======================================================================================
-
-// Registered before anything else: a load-time crash used to leave a dead page with
-// no explanation (usually a stale cached index.html paired with this file).
 function showFatalError(detail) {
   console.error("Kabisni failed to start:", detail);
   if (document.querySelector(".fatalError")) return;
@@ -323,7 +314,7 @@ function renderLeaderboard() {
     profilePic.setAttribute("data-content", `#${index}`);
 
     const img = document.createElement("img");
-    img.src = "assets/img/others.png";
+    img.src = "assets/img/others.webp";
     img.alt = "others";
 
     const nameSpan = document.createElement("span");
@@ -643,7 +634,7 @@ function randomPosition() {
 // be initialized or it dies in the temporal dead zone.
 let bossArena = null;
 
-// Classic 11x8 invader — the same sprite as assets/img/space-invader.png.
+// Classic 11x8 invader — the same sprite as assets/img/space-invader.webp.
 const INVADER_SPRITE = [
   "..X.....X..",
   "...X...X...",
@@ -852,7 +843,7 @@ function startGame() {
   // function yippy() {
   //   let post = randomPosition();
   //   let bug = document.createElement("img");
-  //   bug.src = "assets/img/Hoarding_Bug_Lethal_Company.png";
+  //   bug.src = "assets/img/Hoarding_Bug_Lethal_Company.webp";
   //   bug.classList.add("bug");
   //   circle.after(bug);
   //   bug.style.cssText = `position: absolute; width: 50px; left: calc(${Math.abs(
@@ -1008,7 +999,7 @@ function startGame() {
     trap.className = "lahnt-trap";
     trap.dir = "rtl";
     trap.innerHTML = `
-      <img src="assets/img/lahnt.png" alt="لهنت">
+      <img src="assets/img/lahnt.webp" alt="لهنت">
       <p>تريد <strong>+9999</strong> نقطة؟ انه غير قانوني ههه 👀</p>
       <div class="lahnt-buttons">
         <button class="lahnt-yes">نعم</button>
@@ -1067,7 +1058,7 @@ function startGame() {
     if (!isGameRunning) return;
     const post = randomPosition();
     const bug = document.createElement("img");
-    bug.src = "assets/img/Hoarding_Bug_Lethal_Company.png";
+    bug.src = "assets/img/Hoarding_Bug_Lethal_Company.webp";
     bug.alt = "هورينغ";
     bug.classList.add("bug");
     document.querySelector(".main_container").appendChild(bug);
@@ -1298,7 +1289,7 @@ function startGame() {
     const bugGroups = [];
     let bugSpriteMap = null;
     new THREE.TextureLoader().load(
-      "assets/img/Hoarding_Bug_Lethal_Company.png",
+      "assets/img/Hoarding_Bug_Lethal_Company.webp",
       tex => {
         bugSpriteMap = tex;
       },

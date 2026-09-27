@@ -18,7 +18,7 @@
 
 <div align="center">
 
-![لقطة من اللعبة](assets/img/screenShot.png)
+![لقطة من اللعبة](assets/img/screenShot.webp)
 
 </div>
 
