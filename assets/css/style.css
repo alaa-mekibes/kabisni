@@ -527,6 +527,8 @@ h6 {
   padding: 0;
   display: none;
   overflow: hidden;
+  /* same compositor reason as .start above */
+  will-change: opacity;
   .close_container {
     position: absolute;
     top: 6px;
@@ -923,6 +925,9 @@ h6 {
   overflow: hidden;
   justify-content: space-between;
   position: relative;
+  /* opacity-only transitions (menu <-> board) stay on the compositor:
+     without this the blurred shadows + gradients repaint every frame */
+  will-change: opacity;
   h2 {
     font-size: 1.75rem;
     font-weight: 800;
