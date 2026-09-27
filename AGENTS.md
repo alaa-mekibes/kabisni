@@ -19,32 +19,13 @@ Static Arabic RTL browser game. No framework, no build, no tests, no package man
 - `assets/img/`, `assets/sound/` — referenced by relative path; keep filenames as-is (one contains Arabic: `كبسني.webp`).
 - `assets/js/manifest.json` — PWA manifest, linked from `index.html` head as a local path.
 
-## Backend: Supabase online leaderboard (`kabisni` project)
+## Backend: none (online experiment removed)
 
-- Online board lives in `public.scores` (RLS on). Anonymous inserts are rejected;
-  authenticated (invisible anonymous-auth session, no signup UX) inserts must pass
-  Postgres CHECKs: name 2–16 chars without `<>&`, `clicks == score`, `peak_cps` 0–20,
-  `score <= floor(duration*10)`, `duration` 10–3600. A trigger throttles to 1 row / 60s
-  per identity and caps 500 rows per identity; `scores_throttle()` has EXECUTE revoked
-  from everyone (trigger-only). Reads are public (top 10 by score). No UPDATE/DELETE.
-- Frontend uses plain `fetch` (PostgREST + GoTrue), no library — classic script stays
-  `file://`-safe. `assets/js/supabase-config.js` (gitignored, copy the `.example` file)
-  sets `window.KABISNI_SUPABASE`; without it the game is fully offline on the local board.
-  The publishable key in that file is public by design — RLS is the protection, not the key.
-- `main.js` §4b (`onlineConfig` … `updateBestButton`): anon session cached in
-  `kabisni:session` with refresh; `submitScoreOnline()` fires only on valid `endGame`
-  (never for `cheat` rows — those stay local-only); `refreshOnlineBoard()` renders into
-  the existing `.leader`/`.others` nodes with `textContent` only.
-  All client checks remain; the server re-validates independently.
-- Residual risk (anonymous board, no CAPTCHA): a spammer can mint identities, but each
-  fake row costs a fresh identity + 60s waits + a plausible duration. If spam appears,
-  next steps are Turnstile in front of submit or manual row deletion — nothing here can
-  provide server-authoritative gameplay.
-
-## Backend history (local-only era)
-
-- `assets/js/config.js` (old Supabase URL + anon key) is deleted; do not reintroduce keys
-  in the repo — the only key lives in gitignored `supabase-config.js`.
+- No server, no auth, no network calls. The game is fully offline: everything persists
+  in `localStorage`, the leaderboard is per-device only.
+- Do not reintroduce keys in the repo. A past experiment loaded
+  `assets/js/supabase-config.js` (gitignored publishable key) and a `public.scores`
+  table with RLS + CHECKs; it was removed — see git history if it ever returns.
 - Everything persists in `localStorage` under `kabisni:*` keys: `nickname`, `progress` (`{score, storePoints}`), `scores` (leaderboard rows), `secret` (per-device signing salt).
 - All storage access goes through `readStore`/`writeStore` (JSON) or `readRaw`/`writeRaw` (plain strings, used by skins). Never touch `localStorage` directly: a blocked storage (private mode, cookies off) must degrade to an in-memory session, not kill the script on load.
 - Entry is a nickname gate (`#nickname`), not login: `showNameGate()` / `showStartMenu()` flip `.start.box` visibility at boot, no throttle, no await.

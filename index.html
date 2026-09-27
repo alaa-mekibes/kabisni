@@ -80,7 +80,7 @@
               <div class="inputs">
                 <input id="nicknameInput" type="text" maxlength="16" placeholder="اسمك في اللعبة" />
               </div>
-              <p class="ask">بدون حساب ولا تسجيل — اسمك يظهر في الترتيب العالمي 🌐</p>
+              <p class="ask">الاسم يحفظ على جهازك فقط، بدون حساب ولا تسجيل.</p>
               <div class="buttons">
                 <button id="saveNickname">حفظ</button>
               </div>
@@ -98,8 +98,7 @@
         <button id="bestKabasin" title="أفضل الكباسين">أفضل الكباسين</button>
         </p>
       </div>
-      <!-- Start leaderBoarder (online top 10 when supabase-config.js exists,
-           else local board; renderLeaderboard()/renderOnlineRows() write here) -->
+      <!-- Start leaderBoarder (.others/.leader nodes written by renderLeaderboard()) -->
       <div class="leaderBoarder box" style="display: none;">
         <div class="close_container">
           <button class="close">X</button>
@@ -132,7 +131,6 @@
             <div id="timer" style="font-weight: 500; display: none;">0.0</div>
       <button id="save" title="انتظر 10 ثواني">حفظ التقدم</button>
     </footer>
-    <script src="assets/js/supabase-config.js"></script>
-    <script src="assets/js/main.js?v=5"></script>
+    <script src="assets/js/main.js?v=6"></script>
   </body>
 </html>
