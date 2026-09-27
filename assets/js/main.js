@@ -479,7 +479,7 @@ const AMBIENCES = {
   wind: { label: "رياح 🌬", type: "lowpass", freq: 400, gain: 0.0575, lfoRate: 0.13, lfoDepth: 0.0345, lfoTarget: "gain" },
   rain: { label: "مطر 🌧", type: "highpass", freq: 2200, gain: 0.035, lfoRate: 2.5, lfoDepth: 0.008, lfoTarget: "gain" },
   ocean: { label: "أمواج 🌊", type: "lowpass", freq: 700, gain: 0.06, lfoRate: 0.1, lfoDepth: 350, lfoTarget: "freq" },
-  thunder: { label: "رعد ⛈", type: "lowpass", freq: 120, gain: 0.09, lfoRate: 0.05, lfoDepth: 0.05, lfoTarget: "gain" },
+  thunder: { label: "رعد ⛈", type: "lowpass", freq: 240, gain: 0.28, lfoRate: 0.07, lfoDepth: 0.15, lfoTarget: "gain" },
   off: { label: "صامت 🔇" }
 };
 let ambienceNodes = null;
