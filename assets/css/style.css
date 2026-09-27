@@ -145,32 +145,6 @@ h6 {
     }
   }
 }
-.before-profile-leaders::before {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 2.5rem;
-  height: 2.5rem;
-  background-color: gold;
-  font-size: 1.5rem;
-  border-radius: 50%;
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  font-weight: 600;
-  border: 3px solid;
-}
-.before-profile-others {
-  position: relative;
-}
-.before-profile-others::before {
-  content: attr(data-content);
-  top: -6px;
-  left: -6px;
-  width: 1.5rem;
-  height: 1.5rem;
-  font-size: 0.75rem;
-}
 .no-before::before {
   content: none !important;
 }
@@ -513,137 +487,6 @@ h6 {
   mix-blend-mode: exclusion;
   z-index: 9;
   display: none;
-}
-.leaderBoarder {
-  position: relative;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  background: linear-gradient(180deg, #ece7db, #d9d3c4);
-  border: 1px solid rgba(0, 53, 84, 0.18);
-  box-shadow: var(--shadow-navy);
-  border-radius: 20px;
-  padding: 0;
-  display: none;
-  overflow: hidden;
-  /* same compositor reason as .start above */
-  will-change: opacity;
-  .close_container {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-  }
-  img {
-    display: block;
-    width: 50px;
-  }
-  .leader {
-    background: linear-gradient(180deg, #0a6d9e, #004e74);
-    height: 100%;
-    width: 50%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    border-top-right-radius: inherit;
-    border-bottom-right-radius: inherit;
-    overflow: hidden;
-    h3 {
-      font-size: 2rem;
-      font-weight: 800;
-      color: #ffd700;
-      text-shadow: 0 2px 0 rgba(0, 30, 45, 0.5);
-      margin-bottom: 2rem;
-    }
-    .profile_pic {
-      position: relative;
-      &::before {
-        content: "#1";
-        color: #3a0ca3;
-      }
-    }
-    img {
-      width: 100%;
-      border-radius: 50%;
-      border: 3px solid #fff;
-      margin-bottom: 2rem;
-    }
-    .name {
-      font-size: 2rem;
-      color: #ffffff;
-      font-weight: 900;
-      text-shadow: 0 2px 4px rgba(0, 30, 45, 0.5);
-    }
-    .point {
-      font-size: 1.5rem;
-      font-weight: 700;
-      color: #ffd700;
-      font-variant-numeric: tabular-nums;
-    }
-  }
-  .others {
-    background: linear-gradient(180deg, #ef6a55, #d84a37);
-    height: 100%;
-    width: 50%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 2rem;
-    border-top-left-radius: inherit;
-    border-bottom-left-radius: inherit;
-    list-style: none;
-    overflow-y: auto;
-    li {
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 0.5rem;
-      padding-bottom: 0.5rem;
-      &:not(:last-child) {
-        border-bottom: 1px solid rgba(0, 0, 0, 0.14);
-      }
-      .text {
-        display: flex;
-        gap: 1rem;
-        align-items: center;
-        img {
-          border-radius: 50%;
-          max-width: 100%;
-          border: 3px solid #fff;
-        }
-        .name {
-          font-size: 1rem;
-          color: #0c8aa3;
-          font-weight: 700;
-        }
-      }
-      .point {
-        font-size: 0.85rem;
-        font-weight: 700;
-        font-variant-numeric: tabular-nums;
-      }
-    }
-  }
-}
-@media (max-width: 430px) {
-  .leader .name {
-    font-size: 1.5rem !important;
-  }
-  .others li {
-    flex-direction: column;
-  }
-  .others .text {
-    margin-bottom: 10px;
-    gap: 10px;
-    flex-direction: column;
-  }
-  .others li:not(:last-child) {
-    margin-bottom: 1rem;
-  }
 }
 .main_container .store {
   position: absolute;
@@ -1027,29 +870,6 @@ h6 {
         font-weight: 800;
         text-shadow: none;
       }
-    }
-  }
-  #bestKabasin {
-    display: none;
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 0.95rem;
-    font-weight: 700;
-    color: #e2fdff;
-    opacity: 0.85;
-    text-decoration: underline dashed;
-    text-underline-offset: 4px;
-    &:hover {
-      opacity: 1;
-      color: #ffd700;
-    }
-  }
-  .extra-links {
-    text-align: center;
-    margin-top: 4px;
-    &:empty {
-      display: none;
     }
   }
 }

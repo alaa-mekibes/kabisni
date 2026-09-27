@@ -16,12 +16,8 @@ window.addEventListener("error", event => {
 const KEYS = {
   nickname: "kabisni:nickname",
   progress: "kabisni:progress",
-  scores: "kabisni:scores",
-  secret: "kabisni:secret",
   ambience: "kabisni:ambience"
 };
-const LEADERBOARD_SIZE = 10;
-const MAX_LEADERBOARD_ROWS = 50;
 const MAX_NICKNAME_LENGTH = 16;
 
 function readStore(key, fallback) {
@@ -85,78 +81,10 @@ function getUserColumnData(col) {
 }
 
 // ---- 2. Anti-cheat ==================================================================
-// Inspect-element players edit the numbers they can see. Three defences:
+// Inspect-element players edit the numbers they can see. Two defences:
 //   a) the score is mirrored from a click ledger, never the other way round;
-//   b) at game over the DOM counters must still match the internal values;
-//   c) saved rows carry a device signature, so editing localStorage is detected on read.
+//   b) at game over the DOM counters must still match the internal values.
 // Client-side anti-cheat is deterrence, not a guarantee — the real fix is a server.
-
-// FNV-1a, tiny and dependency free.
-function hash32(input) {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < input.length; i++) {
-    h ^= input.charCodeAt(i);
-    h = Math.imul(h, 0x01000193) >>> 0;
-  }
-  return h >>> 0;
-}
-
-// Per-device secret, so a leaked record cannot be recomputed on another machine.
-function deviceSecret() {
-  let secret = readStore(KEYS.secret, null);
-  if (typeof secret !== "string" || secret.length < 8) {
-    secret = Math.random().toString(36).slice(2) + Date.now().toString(36);
-    writeStore(KEYS.secret, secret);
-  }
-  return secret;
-}
-
-function signRecord(record, secret) {
-  return hash32(
-    [secret, record.name, record.score, record.storePoints, record.duration, record.at, record.cheat].join("|")
-  ).toString(36);
-}
-
-function isRecordTrusted(record, secret) {
-  if (!record || typeof record.score !== "number" || typeof record.at !== "number") return false;
-  return record.seal === signRecord(record, secret);
-}
-
-// Reads the board and silently drops any row whose signature no longer matches, i.e.
-// someone opened devtools and typed a bigger number in localStorage.
-function leaderboard() {
-  const secret = deviceSecret();
-  const rows = readStore(KEYS.scores, []);
-  if (!Array.isArray(rows)) {
-    writeStore(KEYS.scores, []);
-    return [];
-  }
-  const trusted = rows.filter(row => isRecordTrusted(row, secret) && !row.cheat);
-  if (trusted.length !== rows.length) {
-    console.warn("dropped tampered leaderboard rows", rows.length - trusted.length);
-    writeStore(KEYS.scores, trusted);
-  }
-  return trusted.sort((a, b) => b.score - a.score).slice(0, LEADERBOARD_SIZE);
-}
-
-function publishScore({ name, score, storePoints, duration, cheat }) {
-  const secret = deviceSecret();
-  const rows = readStore(KEYS.scores, []);
-  const list = Array.isArray(rows) ? rows.filter(row => isRecordTrusted(row, secret)) : [];
-  const entry = {
-    name,
-    score,
-    storePoints,
-    duration,
-    at: Date.now(),
-    cheat: !!cheat
-  };
-  entry.seal = signRecord(entry, secret);
-  list.push(entry);
-  list.sort((a, b) => b.score - a.score);
-  writeStore(KEYS.scores, list.slice(0, MAX_LEADERBOARD_ROWS));
-  return entry;
-}
 
 // Keeps the best score, always overwrites the store balance (old upsert semantics).
 function saveProgress(score, storePoints) {
@@ -170,7 +98,7 @@ function saveProgress(score, storePoints) {
 // Light deterrent for the inspect-element route.
 function guardDevTools() {
   document.addEventListener("contextmenu", event => {
-    if (event.target.closest(".score, .myPoints, .leaderBoarder")) event.preventDefault();
+    if (event.target.closest(".score, .myPoints")) event.preventDefault();
   });
   document.addEventListener("dragstart", event => {
     if (event.target.closest(".score, .myPoints")) event.preventDefault();
@@ -233,7 +161,6 @@ function showNameGate(prefill) {
 
 function showStartMenu() {
   nameGate.style.display = "none";
-  document.querySelector(".leaderBoarder").style.display = "none";
   startMenu.style.display = "flex";
   document.querySelector("#username-display").textContent = currentNickname();
 
@@ -267,103 +194,6 @@ function handleNickname() {
 document.querySelector("#changeName").addEventListener("click", () => {
   showNameGate(currentNickname());
 });
-
-// ---- 4. Leaderboard =================================================================
-function getTopPlayer() {
-  const top = leaderboard()[0];
-  return top ? { name: top.name, score: top.score } : { msg: "none" };
-}
-
-function getOtherPlayer() {
-  const rest = leaderboard().slice(1, LEADERBOARD_SIZE);
-  if (rest.length > 0) {
-    return rest.map(player => ({ name: player.name, score: player.score }));
-  }
-  return { msg: "none" };
-}
-
-function renderLeaderboard() {
-  const best = getTopPlayer();
-  if (!best.msg) {
-    document.querySelector(".leaderBoarder .leader .name").textContent = best.name;
-    document.querySelector(".leaderBoarder .leader .point").textContent = best.score;
-    updateBestButton();
-  } else {
-    document.querySelector(".leaderBoarder .leader .name").textContent = "لايوجد لاعب بعد";
-    document.querySelector(".leaderBoarder .leader .point").textContent = "لايوجد لاعب بعد";
-  }
-
-  const others = getOtherPlayer();
-  if (others.msg) {
-    if (document.querySelector(".leaderBoarder .others .text .name")) {
-      document.querySelector(".leaderBoarder .others .text .name").textContent = "لايوجد لاعب بعد";
-      document.querySelector(".leaderBoarder .others .point").textContent = "لايوجد لاعب بعد";
-    }
-    return;
-  }
-
-  let index = 2;
-  document.querySelector(".others").innerHTML = "";
-  others.forEach(e => {
-    const listItem = document.createElement("li");
-
-    const textDiv = document.createElement("div");
-    textDiv.className = "text";
-
-    const profilePic = document.createElement("div");
-    profilePic.classList.add("profile_pic", "before-profile-leaders", "before-profile-others");
-    profilePic.setAttribute("data-content", `#${index}`);
-
-    const img = document.createElement("img");
-    img.src = "assets/img/others.webp";
-    img.alt = "others";
-
-    const nameSpan = document.createElement("span");
-    nameSpan.className = "name";
-    nameSpan.textContent = e.name;
-
-    const pointSpan = document.createElement("span");
-    pointSpan.className = "point";
-    pointSpan.textContent = e.score;
-
-    profilePic.appendChild(img);
-    textDiv.appendChild(profilePic);
-    textDiv.appendChild(nameSpan);
-    listItem.appendChild(textDiv);
-    listItem.appendChild(pointSpan);
-    document.querySelector(".others").appendChild(listItem);
-
-    index++;
-  });
-}
-
-document.querySelector("#bestKabasin").addEventListener("click", () => {
-  startMenu.style.animation = "fade-out 1s";
-  setTimeout(() => {
-    startMenu.style.display = "none";
-    const leaderBoard = document.querySelector(".leaderBoarder");
-    renderLeaderboard();
-    leaderBoard.style.display = "flex";
-    leaderBoard.style.animation = "fade-in 1s";
-  }, 1000);
-});
-
-document.querySelector(".leaderBoarder .close_container").addEventListener("click", () => {
-  const leaderBoard = document.querySelector(".leaderBoarder");
-
-  leaderBoard.style.animation = "fade-out 1s";
-  setTimeout(() => {
-    leaderBoard.style.display = "none";
-    startMenu.style.display = "flex";
-    startMenu.style.animation = "fade-in 1s";
-  }, 999);
-});
-
-function updateBestButton() {
-  const btn = document.querySelector("#bestKabasin");
-  if (!btn) return;
-  if (leaderboard().length > 0) btn.style.display = "inline-block";
-}
 
 // ---- Store ==========================================================================
 let isGameRunning = false;
@@ -1497,7 +1327,6 @@ function startGame() {
     document.querySelector(".main_container").style.pointerEvents = "none";
     document.querySelector("#start_menu").style.pointerEvents = "all";
     document.querySelector(".store").style.pointerEvents = "all";
-    document.querySelector(".leaderBoarder").style.pointerEvents = "all";
     document.getElementById("save").textContent = "إعادة";
     document.getElementById("save").addEventListener("click", _ => {
       location.reload();
@@ -1512,12 +1341,6 @@ function startGame() {
     if (isScoreValid(score, gameDuration, storePoints, oldStorePoints) && tampered.length === 0) {
       const previous = getProgress().score;
       saveProgress(score, storePoints);
-      publishScore({
-        name: currentNickname(),
-        score,
-        storePoints,
-        duration: gameDuration
-      });
       if (score > previous) {
         alertUser("تم تحديث النتيجة بنجاح!");
       } else {
@@ -1533,13 +1356,6 @@ function startGame() {
   function caughtCheating(gameDuration, viaLahnt = false) {
     disposeArena();
     stopAmbience();
-    publishScore({
-      name: currentNickname(),
-      score,
-      storePoints,
-      duration: gameDuration,
-      cheat: true
-    });
     console.log("redirected to cheaters page");
     const subline = viaLahnt ? "لهنت خدعك 👀" : "الغشاش يُكشَف دائماً 👀";
     document.body.innerHTML = `
@@ -1593,10 +1409,8 @@ function startGame() {
 }
 
 // ---- Boot ===========================================================================
-// No auth round-trip: the gate is a single local read, so the game is playable at once.
+// No round-trip: the gate is a single local read, so the game is playable at once.
 guardDevTools();
-renderLeaderboard();
-updateBestButton();
 if (currentNickname()) {
   showStartMenu();
 } else {

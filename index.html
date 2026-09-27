@@ -36,9 +36,6 @@
     />
     <!-- css -->
     <link rel="stylesheet" href="assets/css/style.css" />
-    <!-- board avatars preloaded so first open doesn't decode mid-fade -->
-    <link rel="preload" as="image" href="assets/img/leader.webp" />
-    <link rel="preload" as="image" href="assets/img/others.webp" />
     <title>كبسني | Kabisni</title>
   </head>
   <body>
@@ -94,29 +91,7 @@
         <div class="buttons">
         <button id="start">إبدأ</button>
         </div>
-        <p class="extra-links">
-        <button id="bestKabasin" title="أفضل الكباسين">أفضل الكباسين</button>
-        </p>
       </div>
-      <!-- Start leaderBoarder (.others/.leader nodes written by renderLeaderboard()) -->
-      <div class="leaderBoarder box" style="display: none;">
-        <div class="close_container">
-          <button class="close">X</button>
-        </div>
-
-        <ul class="others">
-        </ul>
-        <div class="leader">
-          <h3>أفضل مكبس</h3>
-          <div class="profile_pic before-profile-leaders">
-          <img src="assets/img/leader.webp" alt="leader">
-
-          </div>
-          <h4 class="name"></h4>
-          <span class="point"></span>
-        </div>
-      </div>
-
       <!-- enemy -->
       <div class="enemy">
         <div class="space-invader"></div>

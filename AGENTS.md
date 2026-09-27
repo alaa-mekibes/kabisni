@@ -12,8 +12,8 @@ Static Arabic RTL browser game. No framework, no build, no tests, no package man
 
 ## Structure
 
-- `index.html` — all UI markup (name gate, start menu, store, leaderboard, enemy). Entry point.
-- `assets/js/main.js` (~900 lines, single monolith) — local data layer, name gate, store/skins, game loop levels, scoring, anti-cheat, leaderboard.
+- `index.html` — all UI markup (name gate, start menu, store, enemy). Entry point.
+- `assets/js/main.js` (single monolith) — local data layer, name gate, store/skins, game loop levels, scoring, anti-cheat.
 - `assets/css/style.css` — all styles; CSS var `--bg-shape` controls player color.
 - `assets/img/`, `assets/sound/` — referenced by relative path; keep filenames as-is (one contains Arabic: `كبسني.webp`).
 - `assets/js/manifest.json` — PWA manifest, linked from `index.html` head as a local path.
@@ -21,17 +21,15 @@ Static Arabic RTL browser game. No framework, no build, no tests, no package man
 ## Backend: none (online experiment removed)
 
 - No server, no auth, no network calls. The game is fully offline: everything persists
-  in `localStorage`, the leaderboard is per-device only.
+  in `localStorage` (best score + store balance only). There is no leaderboard —
+  it was removed (button, board, and scoring history); see git history if it ever returns.
 - Do not reintroduce keys in the repo. A past experiment loaded
   `assets/js/supabase-config.js` (gitignored publishable key) and a `public.scores`
   table with RLS + CHECKs; it was removed — see git history if it ever returns.
-- Everything persists in `localStorage` under `kabisni:*` keys: `nickname`, `progress` (`{score, storePoints}`), `scores` (leaderboard rows), `secret` (per-device signing salt).
+- Everything persists in `localStorage` under `kabisni:*` keys: `nickname`, `progress` (`{score, storePoints}`).
 - All storage access goes through `readStore`/`writeStore` (JSON) or `readRaw`/`writeRaw` (plain strings, used by skins). Never touch `localStorage` directly: a blocked storage (private mode, cookies off) must degrade to an in-memory session, not kill the script on load.
 - Entry is a nickname gate (`#nickname`), not login: `showNameGate()` / `showStartMenu()` flip `.start.box` visibility at boot, no throttle, no await.
 - `saveProgress()` keeps max `score` and always overwrites `storePoints` (old upsert semantics).
-- `publishScore()` signs each leaderboard row with FNV-1a + `secret`; `leaderboard()` drops rows whose signature no longer matches, so hand-edited `localStorage` scores never show.
-- Leaderboard is per-device only. A real online board needs a backend; nothing here can provide cross-device ranking.
-- `#bestKabasin` (أفضل الكباسين) is hidden via CSS until the leaderboard returns. The button node stays in the DOM so its JS listener keeps binding cleanly.
 
 ## Game logic gotchas (`main.js`)
 
