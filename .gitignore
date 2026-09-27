@@ -1,2 +1,4 @@
 .vercel
 .env*
+assets/js/supabase-config.js
+opencode.json

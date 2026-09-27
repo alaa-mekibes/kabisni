@@ -18,7 +18,8 @@ const KEYS = {
   progress: "kabisni:progress",
   scores: "kabisni:scores",
   secret: "kabisni:secret",
-  ambience: "kabisni:ambience"
+  ambience: "kabisni:ambience",
+  session: "kabisni:session"
 };
 const LEADERBOARD_SIZE = 10;
 const MAX_LEADERBOARD_ROWS = 50;
@@ -287,6 +288,7 @@ function renderLeaderboard() {
   if (!best.msg) {
     document.querySelector(".leaderBoarder .leader .name").textContent = best.name;
     document.querySelector(".leaderBoarder .leader .point").textContent = best.score;
+    updateBestButton();
   } else {
     document.querySelector(".leaderBoarder .leader .name").textContent = "لايوجد لاعب بعد";
     document.querySelector(".leaderBoarder .leader .point").textContent = "لايوجد لاعب بعد";
@@ -342,6 +344,7 @@ document.querySelector("#bestKabasin").addEventListener("click", () => {
     startMenu.style.display = "none";
     const leaderBoard = document.querySelector(".leaderBoarder");
     renderLeaderboard();
+    refreshOnlineBoard();
     leaderBoard.style.display = "flex";
     leaderBoard.style.animation = "fade-in 1s";
   }, 1000);
@@ -357,6 +360,169 @@ document.querySelector(".leaderBoarder .close_container").addEventListener("clic
     startMenu.style.animation = "fade-in 1s";
   }, 999);
 });
+
+// ---- 4b. Online leaderboard (Supabase, optional) ======================================
+// Needs assets/js/supabase-config.js (gitignored, see .example file) which sets
+// window.KABISNI_SUPABASE = { url, key }. Absent -> fully offline, local board only.
+// No library: plain fetch against PostgREST + GoTrue. Classic script, file:// safe.
+//
+// Security model (the server is the source of truth, the client is not trusted):
+// - Inserts need an invisible anonymous auth session (no signup UX) and must pass
+//   Postgres CHECKs: name 2..16 chars without <>&, score == clicks, peak_cps 0..20,
+//   score <= floor(duration*10), duration 10..3600. Violations are rejected by the DB.
+// - A trigger throttles to 1 row / 60s per identity and caps 500 rows per identity,
+//   so random-name spam costs a fresh identity per row and fake highs need matching durations.
+// - Cheat rows (caughtCheating) are NEVER submitted: they stay local-only.
+// - Rows read back are UNTRUSTED data: shape-validated and rendered with textContent
+//   only. A name that looks like an instruction is just a string, never followed.
+const ONLINE_TOP_LIMIT = 10;
+
+function onlineConfig() {
+  const cfg = window.KABISNI_SUPABASE;
+  if (!cfg || typeof cfg.url !== "string" || typeof cfg.key !== "string") return null;
+  const url = cfg.url.replace(/\/$/, "");
+  if (!/^https:\/\/.+\.supabase\.co$/.test(url) || cfg.key.length < 20) return null;
+  return { url, key: cfg.key };
+}
+
+async function ensureOnlineSession(cfg) {
+  const saved = readStore(KEYS.session, null);
+  if (saved && saved.access_token && saved.expires_at > Date.now() + 60000) return saved;
+  if (saved && saved.refresh_token) {
+    try {
+      const res = await fetch(cfg.url + "/auth/v1/token?grant_type=refresh_token", {
+        method: "POST",
+        headers: { apikey: cfg.key, "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: saved.refresh_token })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const session = {
+          access_token: data.access_token,
+          refresh_token: data.refresh_token,
+          expires_at: Date.now() + data.expires_in * 1000
+        };
+        writeStore(KEYS.session, session);
+        return session;
+      }
+    } catch (error) {
+      console.warn("session refresh failed", error);
+    }
+  }
+  // Anonymous sign-in: empty body (no email/phone) = anonymous grant. Invisible to the player.
+  const res = await fetch(cfg.url + "/auth/v1/signup", {
+    method: "POST",
+    headers: { apikey: cfg.key, "Content-Type": "application/json" },
+    body: JSON.stringify({ data: {} })
+  });
+  if (!res.ok) throw new Error("anon signup failed: " + res.status);
+  const data = await res.json();
+  if (!data.access_token) throw new Error("anon signup returned no token (enable the Anonymous provider?)");
+  const session = {
+    access_token: data.access_token,
+    refresh_token: data.refresh_token,
+    expires_at: Date.now() + (data.expires_in || 3600) * 1000
+  };
+  writeStore(KEYS.session, session);
+  return session;
+}
+
+function validOnlineRow(row) {
+  return (
+    row &&
+    typeof row.name === "string" &&
+    typeof row.score === "number" &&
+    row.name.trim().length >= 2 &&
+    row.score >= 0 &&
+    row.score <= 20000
+  );
+}
+
+async function fetchOnlineTop() {
+  const cfg = onlineConfig();
+  if (!cfg) return null;
+  const res = await fetch(
+    cfg.url + "/rest/v1/scores?select=name,score,created_at&order=score.desc&order=created_at.asc&limit=" + ONLINE_TOP_LIMIT,
+    { headers: { apikey: cfg.key } }
+  );
+  if (!res.ok) throw new Error("board fetch failed: " + res.status);
+  const rows = await res.json();
+  return Array.isArray(rows) ? rows.filter(validOnlineRow).slice(0, ONLINE_TOP_LIMIT) : [];
+}
+
+function renderOnlineRows(rows) {
+  if (!rows || !rows.length) return false;
+  const top = rows[0];
+  document.querySelector(".leaderBoarder .leader .name").textContent = String(top.name).slice(0, 16);
+  document.querySelector(".leaderBoarder .leader .point").textContent = String(Math.floor(top.score));
+  const list = document.querySelector(".others");
+  list.innerHTML = "";
+  rows.slice(1).forEach((e, i) => {
+    const listItem = document.createElement("li");
+    const textDiv = document.createElement("div");
+    textDiv.className = "text";
+    const profilePic = document.createElement("div");
+    profilePic.classList.add("profile_pic", "before-profile-leaders", "before-profile-others");
+    profilePic.setAttribute("data-content", "#" + (i + 2));
+    const img = document.createElement("img");
+    img.src = "assets/img/others.webp";
+    img.alt = "others";
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "name";
+    nameSpan.textContent = String(e.name).slice(0, 16);
+    const pointSpan = document.createElement("span");
+    pointSpan.className = "point";
+    pointSpan.textContent = String(Math.floor(e.score));
+    profilePic.appendChild(img);
+    textDiv.appendChild(profilePic);
+    textDiv.appendChild(nameSpan);
+    listItem.appendChild(textDiv);
+    listItem.appendChild(pointSpan);
+    list.appendChild(listItem);
+  });
+  document.querySelector(".leaderBoarder .leader h3").textContent = "أفضل مكبس 🌐";
+  return true;
+}
+
+function refreshOnlineBoard() {
+  if (!onlineConfig()) return;
+  fetchOnlineTop()
+    .then(rows => {
+      if (rows && renderOnlineRows(rows)) updateBestButton();
+    })
+    .catch(error => console.warn("online board unavailable, using local", error));
+}
+
+async function submitScoreOnline(entry) {
+  const cfg = onlineConfig();
+  if (!cfg) return;
+  const session = await ensureOnlineSession(cfg);
+  const res = await fetch(cfg.url + "/rest/v1/scores", {
+    method: "POST",
+    headers: {
+      apikey: cfg.key,
+      Authorization: "Bearer " + session.access_token,
+      "Content-Type": "application/json",
+      Prefer: "return=minimal"
+    },
+    body: JSON.stringify({
+      name: entry.name,
+      score: entry.score,
+      store_points: entry.storePoints,
+      duration: entry.duration,
+      clicks: entry.clicks,
+      peak_cps: entry.peakCps
+    })
+  });
+  if (res.status === 401) writeStore(KEYS.session, null); // stale token, next run retries
+  if (!res.ok) console.warn("online submit rejected", res.status);
+}
+
+function updateBestButton() {
+  const btn = document.querySelector("#bestKabasin");
+  if (!btn) return;
+  if (onlineConfig() || leaderboard().length > 0) btn.style.display = "block";
+}
 
 // ---- Store ==========================================================================
 let isGameRunning = false;
@@ -1520,6 +1686,16 @@ function startGame() {
         storePoints,
         duration: gameDuration
       });
+      // Online submit is fire-and-forget: local save already happened, and the
+      // server re-validates everything (ledger, rate cap, throttle) on its own.
+      submitScoreOnline({
+        name: currentNickname(),
+        score,
+        storePoints,
+        duration: gameDuration,
+        clicks: clicks.length,
+        peakCps: peakClicksPerSecond
+      }).catch(error => console.warn("online submit failed", error));
       if (score > previous) {
         alertUser("تم تحديث النتيجة بنجاح!");
       } else {
@@ -1598,6 +1774,8 @@ function startGame() {
 // No auth round-trip: the gate is a single local read, so the game is playable at once.
 guardDevTools();
 renderLeaderboard();
+refreshOnlineBoard();
+updateBestButton();
 if (currentNickname()) {
   showStartMenu();
 } else {

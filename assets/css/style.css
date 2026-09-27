@@ -201,6 +201,11 @@ h6 {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  .store_icon {
+    flex: 1;
+    display: flex;
+    justify-content: flex-end;
+  }
   .store_icon button {
     background-color: var(--main-color);
     color: #003554;
@@ -220,7 +225,7 @@ h6 {
     }
   }
   .logo {
-    flex: 1;
+    flex: 0 1 auto;
     display: flex;
     justify-content: center;
     height: 100%;
@@ -230,9 +235,9 @@ h6 {
     }
   }
   .score {
-    width: 20px;
+    flex: 1;
     display: flex;
-    justify-content: end;
+    justify-content: flex-start;
     span {
       font-weight: 800;
       user-select: none;
