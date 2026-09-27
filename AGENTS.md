@@ -6,7 +6,6 @@ Static Arabic RTL browser game. No framework, no build, no tests, no package man
 
 - No `package.json`, build, lint, or test commands. Do not add tooling unprompted.
 - Preview: open `index.html` directly, or serve the repo root statically (e.g. `python -m http.server`). The entry is a **classic script, not `type="module"`** — modules are CORS-blocked on `file://`, which left the page dead with no error. `main.js` has no imports/exports; keep it that way, or the `file://` path breaks again.
-- `index.html` loads the entry as `assets/js/main.js?v=4`. Bump `?v=` when shipping a change, otherwise a cached `main.js` can meet a fresh `index.html` and the page dies silently.
 - A load-time crash now paints a `.fatalError` overlay (registered first thing in `main.js`). If a user reports a dead page, read that message before debugging game logic.
 - After a deploy, ask testers for a hard refresh (Ctrl+Shift+R).
 - Live site: [https://kabisni.vercel.app/](https://kabisni.vercel.app/)
