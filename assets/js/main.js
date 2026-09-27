@@ -485,7 +485,7 @@ function renderOnlineRows(rows) {
 }
 
 function refreshOnlineBoard() {
-  if (!onlineConfig()) return;
+  if (!onlineConfig() || navigator.onLine === false) return;
   fetchOnlineTop()
     .then(rows => {
       if (rows && renderOnlineRows(rows)) updateBestButton();
@@ -495,7 +495,7 @@ function refreshOnlineBoard() {
 
 async function submitScoreOnline(entry) {
   const cfg = onlineConfig();
-  if (!cfg) return;
+  if (!cfg || navigator.onLine === false) return;
   const session = await ensureOnlineSession(cfg);
   const res = await fetch(cfg.url + "/rest/v1/scores", {
     method: "POST",
@@ -521,7 +521,7 @@ async function submitScoreOnline(entry) {
 function updateBestButton() {
   const btn = document.querySelector("#bestKabasin");
   if (!btn) return;
-  if (onlineConfig() || leaderboard().length > 0) btn.style.display = "block";
+  if (onlineConfig() || leaderboard().length > 0) btn.style.display = "inline-block";
 }
 
 // ---- Store ==========================================================================
@@ -769,15 +769,6 @@ function rememberTheSkin() {
   document.querySelector(":root").style.setProperty("--bg-shape", readRaw("color"));
   document.querySelector(".player").style.setProperty("animation", readRaw("animation"));
 }
-
-// User click No
-document.querySelector("#abd").addEventListener("click", e => {
-  let abdi = document.createElement("p");
-  abdi.textContent = "من سمح للعبد أن يقرر ؟";
-  e.target.insertAdjacentElement("afterend", abdi);
-  e.target.style.cursor = "no-drop";
-  e.target.style.pointerEvents = "none";
-});
 
 // click before start
 let cheeter = _ => {

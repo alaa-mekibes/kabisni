@@ -1022,17 +1022,30 @@ h6 {
         font-weight: 800;
         text-shadow: none;
       }
-      &:last-of-type {
-        width: 40%;
-      }
     }
   }
   #bestKabasin {
     display: none;
-    margin-top: auto;
-    width: 70%;
-    background: linear-gradient(180deg, var(--gold-soft), #ffd700);
-    color: #003554;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #e2fdff;
+    opacity: 0.85;
+    text-decoration: underline dashed;
+    text-underline-offset: 4px;
+    &:hover {
+      opacity: 1;
+      color: #ffd700;
+    }
+  }
+  .extra-links {
+    text-align: center;
+    margin-top: 4px;
+    &:empty {
+      display: none;
+    }
   }
 }
 .alert {
