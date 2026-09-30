@@ -8,7 +8,7 @@
 
 [![العب الآن](https://img.shields.io/badge/🕹️_العب_الآن-kabisni-FFC000?style=for-the-badge)](https://kabisni.vercel.app/)
 [![بدون حساب](https://img.shields.io/badge/بدون_حساب-اسم_فقط-003554?style=for-the-badge)](https://kabisni.vercel.app/)
-[![بدون بناء](https://img.shields.io/badge/HTML_+_CSS_+_JS-بدون_فريمورك-53b3cb?style=for-the-badge)](https://github.com/alaa-mekibes/kabisni)
+[![مبنية بـ](https://img.shields.io/badge/Next.js_+_TypeScript_+_Tailwind-53b3cb?style=for-the-badge)](https://github.com/alaa-mekibes/kabisni)
 
 </div>
 
@@ -18,7 +18,7 @@
 
 <div align="center">
 
-![لقطة من اللعبة](assets/img/screenshot.png)
+![لقطة من اللعبة](public/img/screenshot.png)
 
 </div>
 
@@ -60,16 +60,17 @@
 
 | المكوّن         | التقنية                                                             |
 | --------------- | ------------------------------------------------------------------- |
-| البنية          | HTML + CSS + JavaScript خالص — بدون فريمورك، بدون أدوات بناء        |
-| مرحلة الزعيم    | Three.js (r147) مضمّن محلياً                                        |
+| البنية          | Next.js + TypeScript + Tailwind CSS                                  |
+| مرحلة الزعيم    | Three.js (من npm، تُحمّل فقط عند الزعيم)                             |
 | باقي اللعبة     | 2D خفيفة بالكامل                                                    |
 | الحفظ           | `localStorage` — تقدمك لا يغادر جهازك أبداً                         |
 
 **للتجربة محلياً:**
 
 ```bash
-python -m http.server
-# ثم افتح: http://localhost:8000
+bun install
+bun run dev
+# ثم افتح: http://localhost:3000
 ```
 
 <br>
